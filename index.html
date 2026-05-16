@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -1013,6 +1013,7 @@ let mp = {
   players: [],
   myId: null,
   roundAnswered: false,
+  lockedPlayers: {},
 };
 
 // ===== 設定 =====
@@ -1234,6 +1235,10 @@ function onGuestReceive(data) {
     receiveRoundAsGuest(data);
     return;
   }
+  if (data.type === 'penalty') {
+    handleGuestPenalty(data);
+    return;
+  }
   if (data.type === 'roundResult') {
     handleRoundResult(data);
     return;
@@ -1302,6 +1307,7 @@ function nextRound() {
   state.roundActive = true;
   state.penaltyActive = false;
   mp.roundAnswered = false;
+  mp.lockedPlayers = {};
 
   const allKeys = Object.keys(ANIMALS);
   const guaranteed = state.guaranteedAnimal;
@@ -1354,6 +1360,14 @@ function nextRound() {
   });
 
   if (mp.mode === 'host') {
+    const inst4 = state.currentInstruction;
+    const fakeInst4 = INSTRUCTIONS.filter(function(i){ return i.action !== inst4.action; });
+    const cardInstructions = selected4.map(function(key) {
+      const isTruth = key === truthKey;
+      const txt = isTruth ? inst4.text : fakeInst4[Math.floor(Math.random() * fakeInst4.length)].text;
+      const col = COLORS[Math.floor(Math.random() * COLORS.length)].bg;
+      return { text: txt, color: col };
+    });
     broadcastToGuests({
       type: 'round',
       round: state.round,
@@ -1361,6 +1375,7 @@ function nextRound() {
       selected4: selected4,
       zoneAnimals: zoneAnimals,
       instruction: state.currentInstruction,
+      cardInstructions: cardInstructions,
     });
   }
 
@@ -1378,9 +1393,39 @@ function receiveRoundAsGuest(data) {
   state.roundActive = true;
   state.penaltyActive = false;
   mp.roundAnswered = false;
+  mp.lockedPlayers = {};
 
-  renderRoundGuest(data.selected4, data.zoneAnimals, data.instruction);
+  renderRoundGuest(data.selected4, data.zoneAnimals, data.instruction, data.cardInstructions);
   startTimer();
+}
+
+function handleGuestPenalty(data) {
+  const isMe = (data.targetId === mp.myId);
+  if (isMe) {
+    mp.lockedPlayers['__guest_self__'] = true;
+    document.getElementById('game-screen').classList.add('flash-wrong');
+    setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-wrong'); }, 600);
+    if (data.penaltyType === 'freeze') {
+      renderColorButtons(false);
+      document.getElementById('no-answer-btn').disabled = true;
+      showFeedback('🧊', 'お手つき！', '3秒間操作できません', false);
+      setTimeout(function() {
+        if (!state.roundActive) return;
+        renderColorButtons(true);
+        document.getElementById('no-answer-btn').disabled = false;
+        document.getElementById('action-title').textContent = '答えを判断してボタンをタップ！';
+      }, data.duration || 3000);
+    } else if (data.penaltyType === 'minus') {
+      showFeedback('📉', 'お手つき！', '−' + (data.amount || 5) + '点', false);
+    } else if (data.penaltyType === 'skip') {
+      renderColorButtons(false);
+      document.getElementById('no-answer-btn').disabled = true;
+      showFeedback('🚫', 'お手つき！', 'このラウンドは答えられません', false);
+    }
+  } else {
+    document.getElementById('game-screen').classList.add('flash-wrong');
+    setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-wrong'); }, 600);
+  }
 }
 
 function handleRoundResult(data) {
@@ -1444,7 +1489,7 @@ function renderRound(animalKeys, zoneAnimals, truthKey) {
   document.getElementById('action-title').textContent = '答えを判断してボタンをタップ！';
 }
 
-function renderRoundGuest(animalKeys, zoneAnimals, instruction) {
+function renderRoundGuest(animalKeys, zoneAnimals, instruction, cardInstructions) {
   document.getElementById('round-badge').textContent = 'ラウンド ' + state.round + ' / ' + state.totalRounds;
 
   renderScoreboard();
@@ -1456,12 +1501,13 @@ function renderRoundGuest(animalKeys, zoneAnimals, instruction) {
     return '<div class="liar-chip"><span class="chip-emoji">' + a.emoji + '</span><span class="chip-name">' + a.name + '</span></div>';
   }).join('');
 
-  // ゲスト側はtruthKeyが不明なのでランダム描画
-  document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key) {
+  // ホストから受信したcardInstructionsで描画（正しい指示を表示）
+  document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key, idx) {
     const a = ANIMALS[key];
-    const displayInst = fakeInstructions[Math.floor(Math.random() * fakeInstructions.length)].text;
-    const textColor = COLORS[Math.floor(Math.random() * COLORS.length)].bg;
-    return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + textColor + '">' + displayInst.replace(/\n/g, '<br>') + '</div></div>';
+    const ci = (cardInstructions && cardInstructions[idx])
+      ? cardInstructions[idx]
+      : { text: fakeInstructions[Math.floor(Math.random() * fakeInstructions.length)].text, color: COLORS[Math.floor(Math.random() * COLORS.length)].bg };
+    return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + ci.color + '">' + ci.text.replace(/\n/g, '<br>') + '</div></div>';
   }).join('');
 
   renderColorButtons(true);
@@ -1544,10 +1590,14 @@ function timeUp() {
 
 // ===== 回答処理 =====
 function handleAnswer(colorId) {
-  if (!state.roundActive || state.penaltyActive) return;
+  if (!state.roundActive) return;
   if (mp.roundAnswered) return;
+  const myId = (mp.mode === 'guest') ? '__guest_self__' : 'host';
+  if (mp.lockedPlayers[myId]) return;
+  if (mp.mode !== 'guest' && state.penaltyActive) return;
 
   if (mp.mode === 'guest') {
+    mp.lockedPlayers['__guest_self__'] = true;
     mp.hostConn.send({ type: 'answer', colorId: colorId, isNoAnswer: false });
     return;
   }
@@ -1556,10 +1606,14 @@ function handleAnswer(colorId) {
 }
 
 function handleNoAnswer() {
-  if (!state.roundActive || state.penaltyActive) return;
+  if (!state.roundActive) return;
   if (mp.roundAnswered) return;
+  const myIdNA = (mp.mode === 'guest') ? '__guest_self__' : 'host';
+  if (mp.lockedPlayers[myIdNA]) return;
+  if (mp.mode !== 'guest' && state.penaltyActive) return;
 
   if (mp.mode === 'guest') {
+    mp.lockedPlayers['__guest_self__'] = true;
     mp.hostConn.send({ type: 'answer', colorId: null, isNoAnswer: true });
     return;
   }
@@ -1642,6 +1696,9 @@ function handleMultiAnswer(guestId, colorId, isNoAnswer) {
   const conn = mp.connections.find(function(c){ return c.peer === guestId; });
   const guestName = (conn && conn.metadata) ? conn.metadata.name : 'ゲスト';
 
+  // per-playerロックチェック（お手付き後の連打防止）
+  if (mp.lockedPlayers[guestId]) return;
+
   const guestPlayer = mp.players.find(function(p){ return p.id === guestId; });
   if (guestPlayer && guestPlayer.frozen) return;
 
@@ -1649,62 +1706,72 @@ function handleMultiAnswer(guestId, colorId, isNoAnswer) {
 }
 
 function applyPenalty(playerId, playerName) {
-  state.penaltyActive = true;
-  document.getElementById('game-screen').classList.add('flash-wrong');
-  setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-wrong'); }, 600);
-
-  const truthKey = state.currentTruthAnimal;
-  const revealMsg = truthKey
-    ? ('答えは ' + ANIMALS[truthKey].emoji + ' ' + ANIMALS[truthKey].name + ' でした')
-    : '答えなしでした！';
-
+  mp.lockedPlayers[playerId] = true;
   const playerIsHost = (playerId === 'host');
 
-  if (state.penalty === 'freeze') {
-    if (mp.mode === 'host' && !playerIsHost) {
-      const p = mp.players.find(function(pp){ return pp.id === playerId; });
-      if (p) {
-        p.frozen = true;
-        broadcastToGuests({ type: 'players', players: mp.players });
-        setTimeout(function() {
-          p.frozen = false;
-          broadcastToGuests({ type: 'players', players: mp.players });
-        }, 3000);
-      }
-      showFeedback('🧊', playerName + ' お手つき！', '3秒凍結 / ' + revealMsg, false);
-      state.roundActive = true;
-      state.penaltyActive = false;
-    } else {
-      showFeedback('🧊', (playerIsHost ? '' : playerName + ' ') + 'お手つき！', '3秒凍結 / ' + revealMsg, false);
+  if (playerIsHost) {
+    state.penaltyActive = true;
+    document.getElementById('game-screen').classList.add('flash-wrong');
+    setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-wrong'); }, 600);
+    if (state.penalty === 'freeze') {
+      showFeedback('🧊', 'お手つき！', '3秒間操作できません', false);
       renderColorButtons(false);
       document.getElementById('no-answer-btn').disabled = true;
       setTimeout(function() {
-        state.roundActive = true;
+        if (!state.roundActive) return;
         state.penaltyActive = false;
         renderColorButtons(true);
         document.getElementById('no-answer-btn').disabled = false;
         document.getElementById('action-title').textContent = '答えを判断してボタンをタップ！';
-        startTimer();
       }, 3000);
+    } else if (state.penalty === 'minus') {
+      state.score = Math.max(0, state.score - 5);
+      document.getElementById('score-display').textContent = state.score + 'pt';
+      if (mp.mode === 'host') {
+        const p = mp.players.find(function(pp){ return pp.id === 'host'; });
+        if (p) p.score = Math.max(0, p.score - 5);
+        renderScoreboard();
+        broadcastToGuests({ type: 'players', players: mp.players });
+      }
+      showFeedback('📉', 'お手つき！', '−5点', false);
+      state.penaltyActive = false;
+    } else if (state.penalty === 'skip') {
+      showFeedback('🚫', 'お手つき！', 'このラウンドは答えられません', false);
+      state.penaltyActive = false;
     }
-  } else if (state.penalty === 'minus') {
-    state.score = Math.max(0, state.score - 5);
-    document.getElementById('score-display').textContent = state.score + 'pt';
-    if (mp.mode === 'host') {
-      const p = mp.players.find(function(pp){ return pp.id === playerId; });
+    return;
+  }
+
+  // ゲストのお手付き（ホスト側で処理）
+  if (mp.mode === 'host') {
+    document.getElementById('game-screen').classList.add('flash-wrong');
+    setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-wrong'); }, 600);
+    const p = mp.players.find(function(pp){ return pp.id === playerId; });
+    if (state.penalty === 'freeze') {
+      if (p) { p.frozen = true; }
+      renderScoreboard();
+      broadcastToGuests({ type: 'penalty', targetId: playerId, penaltyType: 'freeze', duration: 3000 });
+      broadcastToGuests({ type: 'players', players: mp.players });
+      showFeedback('🧊', playerName + ' お手つき！', '3秒凍結（ラウンド続行）', false);
+      setTimeout(function() {
+        if (p) { p.frozen = false; }
+        renderScoreboard();
+        broadcastToGuests({ type: 'players', players: mp.players });
+      }, 3000);
+    } else if (state.penalty === 'minus') {
       if (p) p.score = Math.max(0, p.score - 5);
       renderScoreboard();
+      broadcastToGuests({ type: 'penalty', targetId: playerId, penaltyType: 'minus', amount: 5 });
       broadcastToGuests({ type: 'players', players: mp.players });
+      showFeedback('📉', playerName + ' お手つき！', '−5点（ラウンド続行）', false);
+    } else if (state.penalty === 'skip') {
+      broadcastToGuests({ type: 'penalty', targetId: playerId, penaltyType: 'skip' });
+      showFeedback('🚫', playerName + ' お手つき！', 'このラウンドは失格（他は続行）', false);
     }
-    showFeedback('📉', playerName + ' お手つき！', '−5点 / ' + revealMsg, false);
-    state.penaltyActive = false;
-    setTimeout(nextRound, 2200);
-  } else if (state.penalty === 'skip') {
-    showFeedback('🚫', playerName + ' お手つき！', 'この回失格 / ' + revealMsg, false);
-    state.penaltyActive = false;
-    setTimeout(nextRound, 2200);
+    // roundActiveはそのまま（ラウンド継続）
   }
 }
+
 
 // ===== フィードバック =====
 function showFeedback(emoji, title, msg, correct) {
