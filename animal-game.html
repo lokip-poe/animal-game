@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>どれがホント？</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
+
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1828;
+    --card: #222036;
+    --accent1: #ff6b35;
+    --accent2: #ffd700;
+    --accent3: #7bed9f;
+    --accent4: #ff4757;
+    --text: #fffffe;
+    --muted: #a7a9be;
+    --cat: #ff6b9d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Maru Gothic', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 24px 16px; }
+
+  /* タイトル画面 */
+  #title-screen {
+    justify-content: center;
+    gap: 24px;
+    background: radial-gradient(ellipse at 50% 30%, #2a1f4e 0%, var(--bg) 70%);
+  }
+
+  .title-logo { text-align: center; }
+
+  .title-logo h1 {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 900;
+    line-height: 1.1;
+    background: linear-gradient(135deg, var(--accent2), var(--accent1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(255,180,0,0.4));
+  }
+
+  .title-logo p { color: var(--muted); font-size: 1rem; margin-top: 8px; }
+
+  .animals-preview {
+    display: flex; gap: 16px; font-size: 3rem;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .animal-emoji { display: inline-block; animation: float 3s ease-in-out infinite; }
+  .animal-emoji:nth-child(2) { animation-delay: 0.3s; }
+  .animal-emoji:nth-child(3) { animation-delay: 0.6s; }
+  .animal-emoji:nth-child(4) { animation-delay: 0.9s; }
+
+  /* 設定パネル */
+  .settings-panel {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 24px;
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 遊び方セクション */
+  .howto-section {
+    background: rgba(255,215,0,0.06);
+    border: 1.5px solid rgba(255,215,0,0.2);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+
+  .howto-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .howto-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .howto-list li {
+    font-size: 0.82rem;
+    color: var(--text);
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .howto-list li .howto-icon {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    margin-top: 1px;
+  }
+
+  .howto-list .tag-match1 { color: var(--accent3); font-weight: 700; }
+  .howto-list .tag-match3 { color: var(--accent2); font-weight: 700; }
+  .howto-list .tag-none   { color: var(--muted);   font-weight: 700; }
+  .howto-list .tag-guaranteed { color: var(--cat); font-weight: 700; }
+
+  .setting-group label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+
+  .setting-group .options {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+
+  .option-btn {
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .option-btn.selected {
+    border-color: var(--accent2);
+    background: rgba(255,215,0,0.12);
+    color: var(--accent2);
+  }
+
+  .truth-animal-select { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .animal-option {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 12px 16px; border-radius: 14px;
+    border: 1.5px solid rgba(255,255,255,0.1); background: transparent;
+    color: var(--text); font-family: inherit; font-size: 0.8rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+
+  .animal-option .emoji { font-size: 1.8rem; }
+  .animal-option.selected { border-color: var(--accent3); background: rgba(123,237,159,0.12); }
+  .animal-option.cat-option.selected { border-color: var(--cat); background: rgba(255,107,157,0.12); }
+
+  /* マルチプレイモード切替 */
+  .mode-tabs {
+    display: flex; gap: 6px; justify-content: center;
+    background: var(--surface); border-radius: 12px; padding: 4px;
+  }
+
+  .mode-tab {
+    flex: 1; padding: 8px 10px; border-radius: 8px;
+    border: none; background: transparent; color: var(--muted);
+    font-family: inherit; font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+
+  .mode-tab.active {
+    background: var(--card); color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .multi-panel { display: flex; flex-direction: column; gap: 12px; }
+
+  .room-code-display {
+    background: var(--surface); border: 2px solid var(--accent2);
+    border-radius: 14px; padding: 14px 18px;
+    text-align: center;
+  }
+
+  .room-code-display .code-label {
+    font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  .room-code-display .code-value {
+    font-size: 2rem; font-weight: 900; color: var(--accent2);
+    letter-spacing: 0.2em;
+  }
+
+  .text-input {
+    width: 100%; padding: 10px 14px;
+    border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.15);
+    background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 0.95rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .text-input:focus { border-color: var(--accent2); }
+
+  .text-input-label {
+    font-size: 0.75rem; color: var(--muted); letter-spacing: 0.08em;
+    margin-bottom: 4px; display: block;
+  }
+
+  .guest-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 120px; overflow-y: auto;
+  }
+
+  .guest-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px; background: var(--surface);
+    border-radius: 8px; font-size: 0.85rem;
+  }
+
+  .guest-chip .g-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  .connection-status {
+    font-size: 0.78rem; color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .conn-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #e74c3c; flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .conn-dot.connected { background: var(--accent3); }
+  .conn-dot.waiting { background: var(--accent2); animation: pulse 1s infinite; }
+
+  .btn-primary {
+    padding: 16px 40px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, var(--accent1), #ff8c42);
+    color: white; font-family: inherit; font-size: 1.1rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(255,107,53,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,107,53,0.5); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    padding: 12px 28px; border-radius: 100px;
+    border: 1.5px solid rgba(255,255,255,0.2); background: transparent;
+    color: var(--text); font-family: inherit; font-size: 1rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: rgba(255,255,255,0.5); }
+
+  .btn-sm {
+    padding: 8px 18px; border-radius: 100px; border: none;
+    background: var(--accent3); color: #1a1828;
+    font-family: inherit; font-size: 0.88rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-sm:hover { transform: translateY(-1px); }
+
+  /* ゲーム画面 */
+  #game-screen { gap: 12px; background: var(--bg); }
+
+  .game-header {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; max-width: 600px;
+  }
+
+  .round-badge {
+    background: var(--surface); padding: 6px 16px;
+    border-radius: 100px; font-size: 0.85rem; color: var(--muted);
+  }
+
+  .timer-display {
+    font-size: 2rem; font-weight: 900; color: var(--accent2);
+    min-width: 48px; text-align: center; transition: color 0.3s;
+  }
+  .timer-display.urgent { color: var(--accent4); animation: pulse 0.5s ease-in-out infinite; }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  /* 保証動物バッジ */
+  .guaranteed-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,107,157,0.15); border: 1.5px solid rgba(255,107,157,0.4);
+    border-radius: 100px; padding: 4px 12px;
+    font-size: 0.78rem; font-weight: 700; color: var(--cat);
+    width: 100%; max-width: 600px;
+  }
+
+  .guaranteed-badge .badge-emoji { font-size: 1.1rem; }
+
+  /* スコアボード */
+  .scoreboard {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    width: 100%; max-width: 600px;
+  }
+
+  .score-card {
+    background: var(--card); border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 10px 16px;
+    display: flex; align-items: center; gap: 10px;
+    transition: all 0.3s; min-width: 120px;
+  }
+
+  .score-card.frozen { border-color: #74b9ff; background: rgba(116,185,255,0.1); }
+  .score-card.frozen::after { content: '🧊'; font-size: 1rem; }
+
+  .score-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .score-name { font-size: 0.85rem; color: var(--muted); flex: 1; }
+  .score-points { font-size: 1.3rem; font-weight: 900; }
+  .score-penalty { font-size: 0.7rem; color: var(--accent4); }
+
+  /* 4匹カードグリッド */
+  .animals-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; width: 100%; max-width: 600px;
+  }
+
+  .animal-card {
+    background: var(--card); border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 18px; padding: 16px 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+
+  .animal-card .animal-face { font-size: 2.4rem; line-height: 1; }
+  .animal-card .animal-label { font-size: 0.7rem; color: var(--muted); font-weight: 700; }
+  .animal-card .instruction-text {
+    font-size: clamp(0.78rem, 2.2vw, 0.92rem); font-weight: 700;
+    text-align: center; line-height: 1.4; color: var(--text);
+  }
+
+  .liar-zone {
+    width: 100%; max-width: 600px;
+    background: rgba(255,71,87,0.07);
+    border: 2px solid rgba(255,71,87,0.35);
+    border-radius: 20px; padding: 14px 16px;
+  }
+
+  .zone-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--accent4); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .liar-animals-row { display: flex; gap: 10px; justify-content: center; }
+
+  .liar-chip {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; background: rgba(255,71,87,0.12);
+    border: 1.5px solid rgba(255,71,87,0.3);
+    border-radius: 14px; padding: 10px 16px; min-width: 72px;
+  }
+
+  .liar-chip .chip-emoji { font-size: 2rem; line-height: 1; }
+  .liar-chip .chip-name { font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+
+  /* 操作エリア */
+  .action-area {
+    width: 100%; max-width: 600px; background: var(--card);
+    border-radius: 20px; border: 1px solid rgba(255,255,255,0.08);
+    padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  }
+
+  .action-title {
+    font-size: 0.75rem; color: var(--muted); text-align: center;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+
+  .game-buttons {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+  }
+
+  .game-btn {
+    padding: 18px; border-radius: 16px; border: none;
+    font-family: inherit; font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .game-btn:hover { transform: scale(1.03); }
+  .game-btn:active { transform: scale(0.97); }
+
+  /* 答えなしボタン */
+  .no-answer-btn {
+    width: 100%; padding: 14px;
+    border-radius: 14px; border: 2px solid rgba(255,71,87,0.4);
+    background: rgba(255,71,87,0.08);
+    color: var(--accent4); font-family: inherit; font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .no-answer-btn:hover { background: rgba(255,71,87,0.16); border-color: var(--accent4); transform: scale(1.02); }
+  .no-answer-btn:active { transform: scale(0.98); }
+  .no-answer-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  /* フィードバック */
+  .feedback-overlay {
+    position: fixed; inset: 0; display: flex;
+    align-items: center; justify-content: center;
+    z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  }
+
+  .feedback-overlay.show { opacity: 1; }
+
+  .feedback-content {
+    background: var(--surface); border-radius: 24px;
+    padding: 32px 48px; text-align: center;
+    border: 2px solid transparent;
+    transform: scale(0.8);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .feedback-overlay.show .feedback-content { transform: scale(1); }
+  .feedback-content.correct { border-color: var(--accent3); }
+  .feedback-content.wrong { border-color: var(--accent4); }
+
+  .feedback-emoji { font-size: 3rem; }
+  .feedback-player { font-size: 1.1rem; font-weight: 700; margin-top: 8px; }
+  .feedback-msg { font-size: 0.9rem; color: var(--muted); margin-top: 4px; }
+
+  /* 結果画面 */
+  #result-screen {
+    gap: 24px; justify-content: center;
+    background: radial-gradient(ellipse at 50% 20%, #1e2d1e 0%, var(--bg) 70%);
+  }
+
+  .result-title {
+    font-size: clamp(1.8rem, 6vw, 3rem); font-weight: 900;
+    background: linear-gradient(135deg, var(--accent3), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; text-align: center;
+  }
+
+  .final-rankings {
+    width: 100%; max-width: 400px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .rank-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border-radius: 16px;
+    padding: 16px 20px; border: 1.5px solid rgba(255,255,255,0.06);
+    animation: slideIn 0.4s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .rank-item:nth-child(1) { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.06); animation-delay: 0.1s; }
+  .rank-item:nth-child(2) { border-color: rgba(192,192,192,0.3); animation-delay: 0.2s; }
+  .rank-item:nth-child(3) { border-color: rgba(205,127,50,0.3); animation-delay: 0.3s; }
+
+  .rank-number { font-size: 1.5rem; font-weight: 900; min-width: 32px; }
+  .rank-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .rank-name { flex: 1; font-weight: 700; }
+  .rank-score { font-size: 1.4rem; font-weight: 900; color: var(--accent2); }
+
+  .btn-group { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  @keyframes correctFlash {
+    0% { background: var(--bg); }
+    30% { background: rgba(123,237,159,0.15); }
+    100% { background: var(--bg); }
+  }
+
+  @keyframes wrongFlash {
+    0% { background: var(--bg); }
+    30% { background: rgba(255,71,87,0.15); }
+    100% { background: var(--bg); }
+  }
+
+  .flash-correct { animation: correctFlash 0.6s ease; }
+  .flash-wrong   { animation: wrongFlash 0.6s ease; }
+
+  /* 切断通知 */
+  .disconnect-toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--accent4); color: white;
+    padding: 10px 20px; border-radius: 100px;
+    font-size: 0.9rem; font-weight: 700; z-index: 200;
+    animation: slideDown 0.4s ease;
+    display: none;
+  }
+  .disconnect-toast.show { display: block; }
+
+  @keyframes slideDown {
+    from { top: -40px; opacity: 0; }
+    to   { top: 20px;  opacity: 1; }
+  }
+
+  @media (max-width: 400px) {
+    .animals-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .animal-card { padding: 14px 10px; }
+    .animal-card .animal-face { font-size: 2.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- タイトル画面 -->
+<div id="title-screen" class="screen active">
+  <div class="title-logo">
+    <div class="animals-preview">
+      <span class="animal-emoji">🐶</span>
+      <span class="animal-emoji">🦊</span>
+      <span class="animal-emoji">🐱</span>
+      <span class="animal-emoji">🐭</span>
+      <span class="animal-emoji">🐸</span>
+      <span class="animal-emoji">🐻</span>
+      <span class="animal-emoji">🐰</span>
+      <span class="animal-emoji">🐯</span>
+    </div>
+    <h1>どれがホント？</h1>
+    <p>嘘つきを見破れ！混乱早押しゲーム</p>
+  </div>
+
+  <div class="settings-panel">
+
+    <!-- 遊び方 -->
+    <div class="howto-section">
+      <div class="howto-title">📖 遊び方</div>
+      <ul class="howto-list">
+        <li>
+          <span class="howto-icon">🔍</span>
+          <span>
+            ヒントゾーンの3匹を確認。4匹の中で<br>
+            <span class="tag-match1">1匹だけ一致 → その動物が本物</span><br>
+            <span class="tag-match3">3匹一致 → いない1匹が本物</span><br>
+            <span class="tag-none">0匹／2匹一致 → 答えなし</span>
+          </span>
+        </li>
+        <li>
+          <span class="howto-icon">🎨</span>
+          <span>本物カードに書かれた<strong>指示色のボタン</strong>を押す</span>
+        </li>
+        <li>
+          <span class="howto-icon">⭐</span>
+          <span><span class="tag-guaranteed">無条件本物動物</span>が4匹に出たら<strong>ルール無視で必ずそれが本物</strong></span>
+        </li>
+        <li>
+          <span class="howto-icon">❌</span>
+          <span>答えなしのときは<strong>「答えなし」ボタン</strong>を押すと正解（+10点）</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 保証動物バッジ表示設定 -->
+    <div class="setting-group">
+      <label>ゲーム中に保証動物を表示する</label>
+      <div class="options">
+        <button class="option-btn" data-badge="on" onclick="selectBadgeDisplay(true)">👁 表示する</button>
+        <button class="option-btn selected" data-badge="off" onclick="selectBadgeDisplay(false)">🙈 表示しない（デフォルト）</button>
+      </div>
+    </div>
+
+    <!-- 無条件で本物の動物 -->
+    <div class="setting-group">
+      <label>出たら無条件で本物の動物（1匹選択）</label>
+      <div class="truth-animal-select" id="guaranteed-animal-select"></div>
+      <p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">※ この動物が出たラウンドは無条件で本物の指示を言います</p>
+    </div>
+
+    <!-- お手つきペナルティ -->
+    <div class="setting-group">
+      <label>お手つきペナルティ</label>
+      <div class="options">
+        <button class="option-btn selected" data-penalty="freeze" onclick="selectPenalty('freeze')">⏸ 凍結（3秒）</button>
+        <button class="option-btn" data-penalty="minus" onclick="selectPenalty('minus')">📉 減点</button>
+        <button class="option-btn" data-penalty="skip" onclick="selectPenalty('skip')">🚫 その回失格</button>
+      </div>
+    </div>
+
+    <!-- ラウンド数 -->
+    <div class="setting-group">
+      <label>ラウンド数</label>
+      <div class="options">
+        <button class="option-btn" data-rounds="5" onclick="selectRounds(5)">5</button>
+        <button class="option-btn selected" data-rounds="10" onclick="selectRounds(10)">10</button>
+        <button class="option-btn" data-rounds="15" onclick="selectRounds(15)">15</button>
+      </div>
+    </div>
+
+    <!-- マルチプレイモード -->
+    <div class="setting-group">
+      <label>プレイモード</label>
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode('solo')">🎮 ソロ</button>
+        <button class="mode-tab" onclick="setMode('host')">📡 ホスト</button>
+        <button class="mode-tab" onclick="setMode('guest')">🔗 参加</button>
+      </div>
+
+      <!-- ソロ -->
+      <div id="panel-solo" class="multi-panel" style="margin-top:12px;">
+        <p style="font-size:0.82rem;color:var(--muted);">このデバイスだけで遊ぶ通常モード</p>
+      </div>
+
+      <!-- ホスト -->
+      <div id="panel-host" class="multi-panel" style="margin-top:12px;display:none;">
+        <label class="text-input-label">プレイヤー名</label>
+        <input type="text" class="text-input" id="host-name" placeholder="あなたの名前" maxlength="12" value="ホスト">
+        <div class="room-code-display" id="host-room-display" style="display:none;">
+          <div class="code-label">ルームコード（他のプレイヤーに教えてください）</div>
+          <div class="code-value" id="host-room-code">----</div>
+        </div>
+        <div class="connection-status" id="host-conn-status">
+          <div class="conn-dot" id="host-dot"></div>
+          <span id="host-status-text">「ルームを作成」ボタンでルームが開きます</span>
+        </div>
+        <div class="guest-list" id="guest-list"></div>
+        <button class="btn-sm" onclick="createRoom()">ルームを作成</button>
+      </div>
+
+      <!-- ゲスト -->
+      <div id="panel-guest" class="multi-panel" style="margin-top:12px;display:none;">
+        <label class="text-input-label">プレイヤー名</label>
+        <input type="text" class="text-input" id="guest-name" placeholder="あなたの名前" maxlength="12" value="ゲスト">
+        <label class="text-input-label" style="margin-top:6px;">ルームコード</label>
+        <input type="text" class="text-input" id="guest-room-code" placeholder="4桁のコード" maxlength="4" style="letter-spacing:0.25em;font-size:1.2rem;text-align:center;">
+        <div class="connection-status" id="guest-conn-status">
+          <div class="conn-dot" id="guest-dot"></div>
+          <span id="guest-status-text">ルームコードを入力して接続</span>
+        </div>
+        <button class="btn-sm" onclick="joinRoom()">ルームに参加</button>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="btn-primary" id="start-btn" onclick="startGame()">ゲームスタート</button>
+</div>
+
+<!-- ゲーム画面 -->
+<div id="game-screen" class="screen">
+  <div class="game-header">
+    <div class="round-badge" id="round-badge">ラウンド 1 / 10</div>
+    <div class="timer-display" id="timer">10</div>
+    <div id="header-right" style="display:flex;align-items:center;gap:8px;">
+      <div style="font-size:1.1rem;font-weight:900;color:var(--accent2)" id="score-display">0pt</div>
+    </div>
+  </div>
+
+  <!-- 保証動物バッジ（showGuaranteedBadge設定時のみ表示） -->
+  <div class="guaranteed-badge" id="guaranteed-badge" style="display:none;">
+    <span class="badge-emoji" id="guaranteed-badge-emoji">🐱</span>
+    <span id="guaranteed-badge-text">ねこ：無条件本物</span>
+  </div>
+
+  <!-- スコアボード（マルチ時） -->
+  <div class="scoreboard" id="scoreboard" style="display:none;"></div>
+
+  <!-- 嘘つきゾーン -->
+  <div class="liar-zone">
+    <div class="zone-label">🔍 ヒントゾーン（1匹だけいたらそれが答え・3匹いたらいない1匹が答え）</div>
+    <div class="liar-animals-row" id="liar-animals-row"></div>
+  </div>
+
+  <!-- 4匹の動物カード -->
+  <div class="animals-grid" id="animals-grid"></div>
+
+  <div class="action-area">
+    <div class="action-title" id="action-title">答えを判断してボタンをタップ！</div>
+    <div class="game-buttons" id="color-buttons"></div>
+    <button class="no-answer-btn" id="no-answer-btn" onclick="handleNoAnswer()">
+      ❌ 答えなし
+    </button>
+  </div>
+</div>
+
+<!-- 結果画面 -->
+<div id="result-screen" class="screen">
+  <div class="result-title">🏆 結果発表！</div>
+  <div class="final-rankings" id="final-rankings"></div>
+  <div class="btn-group">
+    <button class="btn-primary" onclick="playAgain()">もう一回</button>
+    <button class="btn-secondary" onclick="goToTitle()">タイトルへ</button>
+  </div>
+</div>
+
+<!-- フィードバックオーバーレイ -->
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-content" id="feedback-content">
+    <div class="feedback-emoji" id="feedback-emoji">✅</div>
+    <div class="feedback-player" id="feedback-player"></div>
+    <div class="feedback-msg" id="feedback-msg"></div>
+  </div>
+</div>
+
+<!-- 切断通知 -->
+<div class="disconnect-toast" id="disconnect-toast">ホストが切断しました</div>
+
+<script>
+// ===== 定数 =====
+const ANIMALS = {
+  dog:    { emoji: '🐶', name: 'いぬ' },
+  fox:    { emoji: '🦊', name: 'きつね' },
+  cat:    { emoji: '🐱', name: 'ねこ' },
+  mouse:  { emoji: '🐭', name: 'ねずみ' },
+  frog:   { emoji: '🐸', name: 'かえる' },
+  bear:   { emoji: '🐻', name: 'くま' },
+  rabbit: { emoji: '🐰', name: 'うさぎ' },
+  tiger:  { emoji: '🐯', name: 'とら' },
+};
+
+const COLORS = [
+  { id: 'red',    label: '赤', bg: '#e74c3c' },
+  { id: 'blue',   label: '青', bg: '#2980b9' },
+  { id: 'yellow', label: '黄', bg: '#f1c40f' },
+  { id: 'green',  label: '緑', bg: '#27ae60' },
+];
+
+const INSTRUCTIONS = [
+  { text: '赤いボタンを\nタップ',  action: 'red',    correct: 'red' },
+  { text: '青いボタンを\nタップ',  action: 'blue',   correct: 'blue' },
+  { text: '黄色いボタンを\nタップ', action: 'yellow', correct: 'yellow' },
+  { text: '緑のボタンを\nタップ',  action: 'green',  correct: 'green' },
+];
+
+const PLAYER_COLORS = ['#ff6b35','#7bed9f','#74b9ff','#ffd700','#ff4757','#a29bfe'];
+
+// ===== 状態 =====
+let state = {
+  guaranteedAnimal: 'cat',
+  showBadge: false,
+  penalty: 'freeze',
+  totalRounds: 10,
+  round: 0,
+  score: 0,
+  currentInstruction: null,
+  currentTruthAnimal: null,
+  currentZoneAnimals: [],
+  timer: null,
+  timeLeft: 10,
+  roundActive: false,
+  penaltyActive: false,
+  roundHistory: [],
+};
+
+// マルチプレイ用
+let mp = {
+  mode: 'solo',
+  peer: null,
+  connections: [],
+  hostConn: null,
+  roomCode: null,
+  myName: 'ソロ',
+  players: [],
+  myId: null,
+  roundAnswered: false,
+};
+
+// ===== 設定 =====
+function setMode(mode) {
+  mp.mode = mode;
+  document.querySelectorAll('.mode-tab').forEach((b, i) => {
+    b.classList.toggle('active', ['solo','host','guest'][i] === mode);
+  });
+  document.getElementById('panel-solo').style.display  = mode === 'solo'  ? '' : 'none';
+  document.getElementById('panel-host').style.display  = mode === 'host'  ? '' : 'none';
+  document.getElementById('panel-guest').style.display = mode === 'guest' ? '' : 'none';
+  document.getElementById('start-btn').disabled = (mode === 'guest');
+}
+
+function selectBadgeDisplay(show) {
+  state.showBadge = show;
+  document.querySelectorAll('[data-badge]').forEach(function(b){
+    b.classList.toggle('selected', (b.dataset.badge === 'on') === show);
+  });
+}
+
+function selectGuaranteedAnimal(animal) {
+  state.guaranteedAnimal = animal;
+  document.querySelectorAll('.animal-option').forEach(b => b.classList.remove('selected'));
+  document.querySelector('[data-animal="' + animal + '"]').classList.add('selected');
+}
+
+function renderGuaranteedAnimalSelect() {
+  const el = document.getElementById('guaranteed-animal-select');
+  el.innerHTML = Object.entries(ANIMALS).map(([key, a]) =>
+    '<button class="animal-option ' + (key === state.guaranteedAnimal ? 'selected' : '') + '" data-animal="' + key + '" onclick="selectGuaranteedAnimal(\'' + key + '\')">' +
+    '<span class="emoji">' + a.emoji + '</span><span>' + a.name + '</span></button>'
+  ).join('');
+}
+
+function selectPenalty(penalty) {
+  state.penalty = penalty;
+  document.querySelectorAll('[data-penalty]').forEach(b => b.classList.remove('selected'));
+  document.querySelector('[data-penalty="' + penalty + '"]').classList.add('selected');
+}
+
+function selectRounds(n) {
+  state.totalRounds = n;
+  document.querySelectorAll('[data-rounds]').forEach(b => b.classList.remove('selected'));
+  document.querySelector('[data-rounds="' + n + '"]').classList.add('selected');
+}
+
+// ===== PeerJS ホスト =====
+function genRoomCode() {
+  return ('0000' + Math.floor(Math.random() * 10000)).slice(-4);
+}
+
+function createRoom() {
+  if (mp.peer) { mp.peer.destroy(); }
+  mp.roomCode = genRoomCode();
+  const peerId = 'animal-game-' + mp.roomCode;
+  mp.peer = new Peer(peerId, { debug: 0 });
+  mp.connections = [];
+
+  document.getElementById('host-dot').className = 'conn-dot waiting';
+  document.getElementById('host-status-text').textContent = '接続中...';
+
+  mp.peer.on('open', function(id) {
+    mp.myId = id;
+    mp.myName = document.getElementById('host-name').value || 'ホスト';
+    document.getElementById('host-room-code').textContent = mp.roomCode;
+    document.getElementById('host-room-display').style.display = '';
+    document.getElementById('host-dot').className = 'conn-dot connected';
+    document.getElementById('host-status-text').textContent = 'ルーム開放中 — ゲストを待っています';
+    refreshGuestList();
+  });
+
+  mp.peer.on('connection', function(conn) {
+    conn.on('open', function() {
+      mp.connections.push(conn);
+      // 設定を送信
+      conn.send({ type: 'welcome', settings: {
+        guaranteedAnimal: state.guaranteedAnimal,
+        showBadge: state.showBadge,
+        penalty: state.penalty,
+        totalRounds: state.totalRounds,
+      }});
+      refreshGuestList();
+    });
+    conn.on('data', function(data) {
+      if (data.type === 'join') {
+        conn.metadata = { name: data.name };
+        refreshGuestList();
+        broadcastToGuests({ type: 'players', players: buildPlayers() });
+        return;
+      }
+      if (data.type === 'answer') {
+        handleMultiAnswer(conn.peer, data.colorId, data.isNoAnswer);
+        return;
+      }
+    });
+    conn.on('close', function() {
+      mp.connections = mp.connections.filter(function(c){ return c !== conn; });
+      refreshGuestList();
+      broadcastToGuests({ type: 'players', players: buildPlayers() });
+    });
+    conn.on('error', function(err) {
+      console.error('conn error', err);
+    });
+  });
+
+  mp.peer.on('error', function(err) {
+    document.getElementById('host-status-text').textContent = 'エラー: ' + err.type;
+  });
+}
+
+function buildPlayers() {
+  const hostPlayer = {
+    id: 'host',
+    name: mp.myName || document.getElementById('host-name').value || 'ホスト',
+    color: PLAYER_COLORS[0],
+    score: (mp.players.find(function(p){ return p.id === 'host'; }) || {score:0}).score || 0,
+    frozen: false,
+  };
+  const guests = mp.connections.map(function(conn, i) {
+    const existing = mp.players.find(function(p){ return p.id === conn.peer; });
+    return {
+      id: conn.peer,
+      name: conn.metadata ? conn.metadata.name : ('ゲスト' + (i+1)),
+      color: PLAYER_COLORS[(i+1) % PLAYER_COLORS.length],
+      score: existing ? existing.score : 0,
+      frozen: existing ? existing.frozen : false,
+    };
+  });
+  return [hostPlayer].concat(guests);
+}
+
+function refreshGuestList() {
+  const list = document.getElementById('guest-list');
+  if (!mp.connections.length) {
+    list.innerHTML = '<span style="font-size:0.8rem;color:var(--muted)">まだ誰も参加していません</span>';
+    return;
+  }
+  list.innerHTML = mp.connections.map(function(conn, i) {
+    const name = conn.metadata ? conn.metadata.name : ('ゲスト' + (i+1));
+    const color = PLAYER_COLORS[(i+1) % PLAYER_COLORS.length];
+    return '<div class="guest-chip"><div class="g-dot" style="background:' + color + '"></div><span>' + name + '</span></div>';
+  }).join('');
+}
+
+function broadcastToGuests(data) {
+  mp.connections.forEach(function(c) {
+    try { c.send(data); } catch(e) {}
+  });
+}
+
+// ===== PeerJS ゲスト =====
+function joinRoom() {
+  const code = document.getElementById('guest-room-code').value.trim();
+  if (code.length !== 4) {
+    document.getElementById('guest-status-text').textContent = '4桁のコードを入力してください';
+    return;
+  }
+  if (mp.peer) { mp.peer.destroy(); }
+  mp.peer = new Peer(undefined, { debug: 0 });
+
+  mp.peer.on('open', function(myId) {
+    mp.myId = myId;
+    mp.myName = document.getElementById('guest-name').value || 'ゲスト';
+    const peerId = 'animal-game-' + code;
+    const conn = mp.peer.connect(peerId);
+    mp.hostConn = conn;
+
+    document.getElementById('guest-dot').className = 'conn-dot waiting';
+    document.getElementById('guest-status-text').textContent = '接続中...';
+
+    conn.on('open', function() {
+      conn.send({ type: 'join', name: mp.myName });
+      document.getElementById('guest-dot').className = 'conn-dot connected';
+      document.getElementById('guest-status-text').textContent = 'ホストと接続しました！スタートを待っています';
+    });
+
+    conn.on('data', function(data) { onGuestReceive(data); });
+
+    conn.on('close', function() {
+      showDisconnectToast();
+      goToTitle();
+    });
+
+    conn.on('error', function(err) {
+      document.getElementById('guest-status-text').textContent = 'エラー: ' + err.message;
+    });
+  });
+
+  mp.peer.on('error', function(err) {
+    document.getElementById('guest-status-text').textContent = 'Peer エラー: ' + err.type;
+  });
+}
+
+function onGuestReceive(data) {
+  if (data.type === 'welcome') {
+    state.guaranteedAnimal = data.settings.guaranteedAnimal;
+    state.showBadge        = data.settings.showBadge;
+    state.penalty          = data.settings.penalty;
+    state.totalRounds      = data.settings.totalRounds;
+    return;
+  }
+  if (data.type === 'players') {
+    mp.players = data.players;
+    renderScoreboard();
+    return;
+  }
+  if (data.type === 'start') {
+    mp.players = data.players;
+    state.round = 0;
+    state.score = 0;
+    state.roundHistory = [];
+    updateGuaranteedBadge();
+    document.getElementById('scoreboard').style.display = 'flex';
+    showScreen('game-screen');
+    return;
+  }
+  if (data.type === 'round') {
+    receiveRoundAsGuest(data);
+    return;
+  }
+  if (data.type === 'roundResult') {
+    handleRoundResult(data);
+    return;
+  }
+  if (data.type === 'gameEnd') {
+    mp.players = data.players;
+    showResult();
+    return;
+  }
+}
+
+function showDisconnectToast() {
+  const t = document.getElementById('disconnect-toast');
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// ===== ゲーム開始 =====
+function startGame() {
+  if (mp.mode === 'guest') return;
+
+  state.round = 0;
+  state.score = 0;
+  state.roundHistory = [];
+  state.penaltyActive = false;
+
+  updateGuaranteedBadge();
+
+  if (mp.mode === 'host') {
+    mp.myName = document.getElementById('host-name').value || 'ホスト';
+    mp.players = buildPlayers();
+    mp.players.forEach(function(p){ p.score = 0; p.frozen = false; });
+    document.getElementById('scoreboard').style.display = 'flex';
+    broadcastToGuests({ type: 'start', players: mp.players });
+  } else {
+    document.getElementById('scoreboard').style.display = 'none';
+    mp.players = [];
+  }
+
+  showScreen('game-screen');
+  nextRound();
+}
+
+function updateGuaranteedBadge() {
+  const badge = document.getElementById('guaranteed-badge');
+  if (!state.showBadge) {
+    badge.style.display = 'none';
+    return;
+  }
+  const a = ANIMALS[state.guaranteedAnimal];
+  document.getElementById('guaranteed-badge-emoji').textContent = a.emoji;
+  document.getElementById('guaranteed-badge-text').textContent = a.name + '：無条件本物';
+  badge.style.display = 'flex';
+}
+
+// ===== ラウンド進行 =====
+function nextRound() {
+  if (state.round >= state.totalRounds) {
+    if (mp.mode === 'host') {
+      broadcastToGuests({ type: 'gameEnd', players: mp.players });
+    }
+    showResult();
+    return;
+  }
+  state.round++;
+  state.roundActive = true;
+  state.penaltyActive = false;
+  mp.roundAnswered = false;
+
+  const allKeys = Object.keys(ANIMALS);
+  const guaranteed = state.guaranteedAnimal;
+  const zonePool = allKeys.filter(function(k){ return k !== guaranteed; });
+  const zoneAnimals = shuffle(zonePool).slice(0, 3);
+
+  let selected4;
+  let truthKey = null;
+
+  if (Math.random() < 0.1) {
+    // ===== 10%: 確定動物ラウンド =====
+    // ゾーン3匹からランダムに2匹 + ゾーン外プールから1匹
+    // → ルール上は「2匹一致=答えなし」に見えるが保証動物が正解（トラップ）
+    const twoFromZone = shuffle(zoneAnimals).slice(0, 2);
+    const outOfZonePool = zonePool.filter(function(k){ return !zoneAnimals.includes(k); });
+    const oneOutside = shuffle(outOfZonePool).slice(0, 1);
+    selected4 = shuffle([guaranteed].concat(twoFromZone).concat(oneOutside));
+    truthKey = guaranteed;
+  } else {
+    // ===== 90%: 通常ラウンド =====
+    let attempts = 0;
+    while (attempts < 10) {
+      const s4 = shuffle(zonePool).slice(0, 4);
+      const matches = s4.filter(function(k){ return zoneAnimals.includes(k); });
+      if (matches.length === 1) {
+        selected4 = s4; truthKey = matches[0]; break;
+      } else if (matches.length === 3) {
+        selected4 = s4; truthKey = s4.find(function(k){ return !zoneAnimals.includes(k); }); break;
+      } else if (matches.length === 0 || matches.length === 2) {
+        if (Math.random() < 0.1) {
+          selected4 = s4; truthKey = null; break;
+        }
+      }
+      attempts++;
+    }
+    if (!selected4) {
+      const inZone = shuffle(zoneAnimals).slice(0, 1);
+      const notInZone = shuffle(zonePool.filter(function(k){ return !zoneAnimals.includes(k); })).slice(0, 3);
+      selected4 = shuffle(inZone.concat(notInZone));
+      truthKey = inZone[0];
+    }
+  }
+
+  state.currentTruthAnimal = truthKey;
+  state.currentZoneAnimals = zoneAnimals;
+  state.currentInstruction = INSTRUCTIONS[Math.floor(Math.random() * INSTRUCTIONS.length)];
+  state.roundHistory.push({
+    round: state.round, truthKey: truthKey,
+    zoneAnimals: zoneAnimals.slice(), selected4: selected4.slice(),
+  });
+
+  if (mp.mode === 'host') {
+    broadcastToGuests({
+      type: 'round',
+      round: state.round,
+      totalRounds: state.totalRounds,
+      selected4: selected4,
+      zoneAnimals: zoneAnimals,
+      instruction: state.currentInstruction,
+    });
+  }
+
+  renderRound(selected4, zoneAnimals, truthKey);
+  startTimer();
+}
+
+// ゲストとしてラウンドデータを受信して描画
+function receiveRoundAsGuest(data) {
+  state.round = data.round;
+  state.totalRounds = data.totalRounds;
+  state.currentZoneAnimals = data.zoneAnimals;
+  state.currentInstruction = data.instruction;
+  state.currentTruthAnimal = null;
+  state.roundActive = true;
+  state.penaltyActive = false;
+  mp.roundAnswered = false;
+
+  renderRoundGuest(data.selected4, data.zoneAnimals, data.instruction);
+  startTimer();
+}
+
+function handleRoundResult(data) {
+  state.roundActive = false;
+  clearInterval(state.timer);
+  mp.roundAnswered = true;
+
+  mp.players = data.players;
+  renderScoreboard();
+
+  // 自分のスコアを更新（mp.playersから自分を探す）
+  const myPlayer = mp.players.find(function(p){ return p.id === mp.myId; });
+  if (myPlayer) {
+    state.score = myPlayer.score;
+    document.getElementById('score-display').textContent = state.score + 'pt';
+  }
+
+  const revealMsg = data.truthAnimal
+    ? ('答えは ' + ANIMALS[data.truthAnimal].emoji + ' ' + ANIMALS[data.truthAnimal].name + ' でした')
+    : '答えなしでした！';
+
+  if (data.correct) {
+    document.getElementById('game-screen').classList.add('flash-correct');
+    setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-correct'); }, 600);
+    showFeedback('✅', data.winnerName + ' 正解！', revealMsg, true);
+  } else {
+    showFeedback('⏱', 'タイムオーバー', revealMsg, data.truthAnimal == null);
+  }
+
+  renderColorButtons(false);
+  document.getElementById('no-answer-btn').disabled = true;
+}
+
+// ===== 描画 =====
+function renderRound(animalKeys, zoneAnimals, truthKey) {
+  document.getElementById('round-badge').textContent = 'ラウンド ' + state.round + ' / ' + state.totalRounds;
+  document.getElementById('score-display').textContent = state.score + 'pt';
+
+  if (mp.mode !== 'solo') renderScoreboard();
+
+  const inst = state.currentInstruction;
+  const fakeInstructions = INSTRUCTIONS.filter(function(i){ return i.action !== inst.action; });
+
+  document.getElementById('liar-animals-row').innerHTML = zoneAnimals.map(function(key) {
+    const a = ANIMALS[key];
+    return '<div class="liar-chip"><span class="chip-emoji">' + a.emoji + '</span><span class="chip-name">' + a.name + '</span></div>';
+  }).join('');
+
+  document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key) {
+    const a = ANIMALS[key];
+    const isTruth = key === truthKey;
+    const displayInst = isTruth
+      ? inst.text
+      : fakeInstructions[Math.floor(Math.random() * fakeInstructions.length)].text;
+    const textColor = COLORS[Math.floor(Math.random() * COLORS.length)].bg;
+    return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + textColor + '">' + displayInst.replace(/\n/g, '<br>') + '</div></div>';
+  }).join('');
+
+  renderColorButtons(true);
+  document.getElementById('no-answer-btn').disabled = false;
+  document.getElementById('action-title').textContent = '答えを判断してボタンをタップ！';
+}
+
+function renderRoundGuest(animalKeys, zoneAnimals, instruction) {
+  document.getElementById('round-badge').textContent = 'ラウンド ' + state.round + ' / ' + state.totalRounds;
+
+  renderScoreboard();
+
+  const fakeInstructions = INSTRUCTIONS.filter(function(i){ return i.action !== instruction.action; });
+
+  document.getElementById('liar-animals-row').innerHTML = zoneAnimals.map(function(key) {
+    const a = ANIMALS[key];
+    return '<div class="liar-chip"><span class="chip-emoji">' + a.emoji + '</span><span class="chip-name">' + a.name + '</span></div>';
+  }).join('');
+
+  // ゲスト側はtruthKeyが不明なのでランダム描画
+  document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key) {
+    const a = ANIMALS[key];
+    const displayInst = fakeInstructions[Math.floor(Math.random() * fakeInstructions.length)].text;
+    const textColor = COLORS[Math.floor(Math.random() * COLORS.length)].bg;
+    return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + textColor + '">' + displayInst.replace(/\n/g, '<br>') + '</div></div>';
+  }).join('');
+
+  renderColorButtons(true);
+  document.getElementById('no-answer-btn').disabled = false;
+  document.getElementById('action-title').textContent = '答えを判断してボタンをタップ！';
+}
+
+function renderColorButtons(enabled) {
+  document.getElementById('color-buttons').innerHTML = COLORS.map(function(c) {
+    return '<button class="game-btn" style="background:' + c.bg + ';color:' + c.bg + ';" onclick="handleAnswer(\'' + c.id + '\')" ' + (enabled ? '' : 'disabled') + '> </button>';
+  }).join('');
+}
+
+function renderScoreboard() {
+  const sb = document.getElementById('scoreboard');
+  if (!mp.players || !mp.players.length) { sb.style.display = 'none'; return; }
+  sb.style.display = 'flex';
+  sb.innerHTML = mp.players.map(function(p) {
+    return '<div class="score-card ' + (p.frozen ? 'frozen' : '') + '"><div class="score-dot" style="background:' + p.color + '"></div><div class="score-name">' + p.name + '</div><div class="score-points">' + p.score + 'pt</div></div>';
+  }).join('');
+}
+
+// ===== タイマー =====
+function startTimer() {
+  clearInterval(state.timer);
+  state.timeLeft = 10;
+  updateTimer();
+  state.timer = setInterval(function() {
+    state.timeLeft--;
+    updateTimer();
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timer);
+      timeUp();
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  const el = document.getElementById('timer');
+  el.textContent = state.timeLeft;
+  el.classList.toggle('urgent', state.timeLeft <= 3);
+}
+
+function timeUp() {
+  if (!state.roundActive) return;
+  state.roundActive = false;
+
+  if (mp.mode === 'guest') {
+    renderColorButtons(false);
+    document.getElementById('no-answer-btn').disabled = true;
+    return;
+  }
+
+  const wasAnswerless = !state.currentTruthAnimal;
+  const msg = wasAnswerless
+    ? '答えなしでした！正解！'
+    : ('答えは ' + ANIMALS[state.currentTruthAnimal].emoji + ' ' + ANIMALS[state.currentTruthAnimal].name + ' でした');
+
+  if (wasAnswerless) state.score += 5;
+  document.getElementById('score-display').textContent = state.score + 'pt';
+
+  if (mp.mode === 'host') {
+    const myPlayer = mp.players.find(function(p){ return p.id === 'host'; });
+    if (myPlayer && wasAnswerless) myPlayer.score += 5;
+    renderScoreboard();
+    broadcastToGuests({
+      type: 'roundResult',
+      correct: wasAnswerless,
+      winnerName: wasAnswerless ? 'タイムオーバー（答えなし正解）' : 'タイムオーバー',
+      truthAnimal: state.currentTruthAnimal,
+      players: mp.players,
+    });
+  }
+
+  showFeedback('⏱', 'タイムオーバー', msg, wasAnswerless);
+  renderColorButtons(false);
+  document.getElementById('no-answer-btn').disabled = true;
+  setTimeout(nextRound, 2200);
+}
+
+// ===== 回答処理 =====
+function handleAnswer(colorId) {
+  if (!state.roundActive || state.penaltyActive) return;
+  if (mp.roundAnswered) return;
+
+  if (mp.mode === 'guest') {
+    mp.hostConn.send({ type: 'answer', colorId: colorId, isNoAnswer: false });
+    return;
+  }
+
+  processAnswer('host', mp.myName || 'プレイヤー', colorId, false);
+}
+
+function handleNoAnswer() {
+  if (!state.roundActive || state.penaltyActive) return;
+  if (mp.roundAnswered) return;
+
+  if (mp.mode === 'guest') {
+    mp.hostConn.send({ type: 'answer', colorId: null, isNoAnswer: true });
+    return;
+  }
+
+  processAnswer('host', mp.myName || 'プレイヤー', null, true);
+}
+
+function processAnswer(playerId, playerName, colorId, isNoAnswer) {
+  if (!state.roundActive || mp.roundAnswered) return;
+
+  if (isNoAnswer) {
+    if (!state.currentTruthAnimal) {
+      // 正解
+      mp.roundAnswered = true;
+      clearInterval(state.timer);
+      state.roundActive = false;
+      state.score += 10;
+      document.getElementById('score-display').textContent = state.score + 'pt';
+
+      if (mp.mode === 'host') {
+        const p = mp.players.find(function(pp){ return pp.id === playerId; });
+        if (p) p.score += 10;
+        renderScoreboard();
+        broadcastToGuests({
+          type: 'roundResult', correct: true,
+          winnerName: playerName + ' 答えなし', truthAnimal: null, players: mp.players,
+        });
+      }
+
+      renderColorButtons(false);
+      document.getElementById('no-answer-btn').disabled = true;
+      document.getElementById('game-screen').classList.add('flash-correct');
+      setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-correct'); }, 600);
+      showFeedback('✅', playerName, '答えなし 正解！ +10点', true);
+      setTimeout(nextRound, 1800);
+    } else {
+      applyPenalty(playerId, playerName);
+    }
+    return;
+  }
+
+  if (!state.currentTruthAnimal) {
+    applyPenalty(playerId, playerName);
+    return;
+  }
+
+  const inst = state.currentInstruction;
+  if (colorId !== inst.correct) {
+    applyPenalty(playerId, playerName);
+    return;
+  }
+
+  // 正解！
+  mp.roundAnswered = true;
+  clearInterval(state.timer);
+  state.roundActive = false;
+  state.score += 10;
+  document.getElementById('score-display').textContent = state.score + 'pt';
+
+  if (mp.mode === 'host') {
+    const p = mp.players.find(function(pp){ return pp.id === playerId; });
+    if (p) p.score += 10;
+    renderScoreboard();
+    broadcastToGuests({
+      type: 'roundResult', correct: true,
+      winnerName: playerName, truthAnimal: state.currentTruthAnimal, players: mp.players,
+    });
+  }
+
+  renderColorButtons(false);
+  document.getElementById('no-answer-btn').disabled = true;
+  document.getElementById('game-screen').classList.add('flash-correct');
+  setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-correct'); }, 600);
+  showFeedback('✅', playerName + ' 正解！', '+10点！', true);
+  setTimeout(nextRound, 1800);
+}
+
+function handleMultiAnswer(guestId, colorId, isNoAnswer) {
+  if (!state.roundActive || mp.roundAnswered) return;
+  const conn = mp.connections.find(function(c){ return c.peer === guestId; });
+  const guestName = (conn && conn.metadata) ? conn.metadata.name : 'ゲスト';
+
+  const guestPlayer = mp.players.find(function(p){ return p.id === guestId; });
+  if (guestPlayer && guestPlayer.frozen) return;
+
+  processAnswer(guestId, guestName, colorId, isNoAnswer);
+}
+
+function applyPenalty(playerId, playerName) {
+  state.penaltyActive = true;
+  document.getElementById('game-screen').classList.add('flash-wrong');
+  setTimeout(function(){ document.getElementById('game-screen').classList.remove('flash-wrong'); }, 600);
+
+  const truthKey = state.currentTruthAnimal;
+  const revealMsg = truthKey
+    ? ('答えは ' + ANIMALS[truthKey].emoji + ' ' + ANIMALS[truthKey].name + ' でした')
+    : '答えなしでした！';
+
+  const playerIsHost = (playerId === 'host');
+
+  if (state.penalty === 'freeze') {
+    if (mp.mode === 'host' && !playerIsHost) {
+      const p = mp.players.find(function(pp){ return pp.id === playerId; });
+      if (p) {
+        p.frozen = true;
+        broadcastToGuests({ type: 'players', players: mp.players });
+        setTimeout(function() {
+          p.frozen = false;
+          broadcastToGuests({ type: 'players', players: mp.players });
+        }, 3000);
+      }
+      showFeedback('🧊', playerName + ' お手つき！', '3秒凍結 / ' + revealMsg, false);
+      state.roundActive = true;
+      state.penaltyActive = false;
+    } else {
+      showFeedback('🧊', (playerIsHost ? '' : playerName + ' ') + 'お手つき！', '3秒凍結 / ' + revealMsg, false);
+      renderColorButtons(false);
+      document.getElementById('no-answer-btn').disabled = true;
+      setTimeout(function() {
+        state.roundActive = true;
+        state.penaltyActive = false;
+        renderColorButtons(true);
+        document.getElementById('no-answer-btn').disabled = false;
+        document.getElementById('action-title').textContent = '答えを判断してボタンをタップ！';
+        startTimer();
+      }, 3000);
+    }
+  } else if (state.penalty === 'minus') {
+    state.score = Math.max(0, state.score - 5);
+    document.getElementById('score-display').textContent = state.score + 'pt';
+    if (mp.mode === 'host') {
+      const p = mp.players.find(function(pp){ return pp.id === playerId; });
+      if (p) p.score = Math.max(0, p.score - 5);
+      renderScoreboard();
+      broadcastToGuests({ type: 'players', players: mp.players });
+    }
+    showFeedback('📉', playerName + ' お手つき！', '−5点 / ' + revealMsg, false);
+    state.penaltyActive = false;
+    setTimeout(nextRound, 2200);
+  } else if (state.penalty === 'skip') {
+    showFeedback('🚫', playerName + ' お手つき！', 'この回失格 / ' + revealMsg, false);
+    state.penaltyActive = false;
+    setTimeout(nextRound, 2200);
+  }
+}
+
+// ===== フィードバック =====
+function showFeedback(emoji, title, msg, correct) {
+  const overlay = document.getElementById('feedback-overlay');
+  const content = document.getElementById('feedback-content');
+  document.getElementById('feedback-emoji').textContent = emoji;
+  document.getElementById('feedback-player').textContent = title;
+  document.getElementById('feedback-msg').textContent = msg;
+  content.className = 'feedback-content ' + (correct ? 'correct' : 'wrong');
+  overlay.classList.add('show');
+  setTimeout(function(){ overlay.classList.remove('show'); }, 2000);
+}
+
+// ===== 結果 =====
+function showResult() {
+  clearInterval(state.timer);
+
+  if (mp.mode !== 'solo' && mp.players && mp.players.length > 0) {
+    const sorted = mp.players.slice().sort(function(a, b){ return b.score - a.score; });
+    const medals = ['🥇','🥈','🥉'];
+    document.getElementById('final-rankings').innerHTML = sorted.map(function(p, i) {
+      return '<div class="rank-item"><div class="rank-number">' + (medals[i] || (i+1) + '位') + '</div><div class="rank-dot" style="background:' + p.color + '"></div><div class="rank-name">' + p.name + '</div><div class="rank-score">' + p.score + 'pt</div></div>';
+    }).join('');
+  } else {
+    const answerlessRounds = state.roundHistory.filter(function(r){ return !r.truthKey; });
+    document.getElementById('final-rankings').innerHTML =
+      '<div class="rank-item" style="border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.06);">' +
+        '<div class="rank-number">🎯</div>' +
+        '<div class="rank-name">最終スコア</div>' +
+        '<div class="rank-score">' + state.score + 'pt</div>' +
+      '</div>' +
+      (answerlessRounds.length > 0
+        ? '<div class="rank-item" style="margin-top:8px;"><div style="font-size:0.85rem;color:var(--muted);width:100%;">答えなしラウンド: ' + answerlessRounds.map(function(r){ return '第' + r.round + '回'; }).join('、') + '</div></div>'
+        : '');
+  }
+  showScreen('result-screen');
+}
+
+function playAgain() {
+  if (mp.mode === 'host') {
+    mp.players.forEach(function(p){ p.score = 0; p.frozen = false; });
+  }
+  startGame();
+}
+
+function goToTitle() {
+  clearInterval(state.timer);
+  if (mp.peer) { mp.peer.destroy(); mp.peer = null; }
+  mp.connections = [];
+  mp.hostConn = null;
+  mp.mode = 'solo';
+  mp.players = [];
+  document.querySelectorAll('.mode-tab').forEach(function(b, i){ b.classList.toggle('active', i === 0); });
+  document.getElementById('panel-solo').style.display = '';
+  document.getElementById('panel-host').style.display = 'none';
+  document.getElementById('panel-guest').style.display = 'none';
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('start-btn').textContent = 'ゲームスタート';
+  showScreen('title-screen');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+// 初期化
+renderGuaranteedAnimalSelect();
+updateGuaranteedBadge();
+</script>
+</body>
+</html>
