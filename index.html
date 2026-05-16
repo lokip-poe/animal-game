@@ -140,6 +140,115 @@
   .howto-list .tag-none   { color: var(--muted);   font-weight: 700; }
   .howto-list .tag-guaranteed { color: var(--cat); font-weight: 700; }
 
+  /* ===== 遊び方例ゾーン ===== */
+  .howto-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 14px;
+  }
+
+  .howto-example {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .howto-example-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+  .howto-example-label.ex1 { background: rgba(123,237,159,0.18); color: var(--accent3); }
+  .howto-example-label.ex2 { background: rgba(255,215,0,0.18); color: var(--accent2); }
+  .howto-example-label.ex3 { background: rgba(167,169,190,0.18); color: var(--muted); }
+
+  /* ミニチュア ヒントゾーン */
+  .howto-example-zone {
+    background: rgba(255,71,87,0.07);
+    border: 1.5px solid rgba(255,71,87,0.3);
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
+  .howto-zone-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent4);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .howto-zone-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .howto-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: rgba(255,71,87,0.12);
+    border: 1px solid rgba(255,71,87,0.25);
+    border-radius: 8px;
+    padding: 5px 10px;
+    min-width: 52px;
+  }
+
+  .howto-chip .hc-emoji { font-size: 1.4rem; line-height: 1; }
+  .howto-chip .hc-name  { font-size: 0.58rem; color: rgba(255,255,255,0.45); }
+
+  /* ミニチュア カードグリッド */
+  .howto-example-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .howto-animal-card {
+    background: var(--card);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .howto-animal-card .hac-face  { font-size: 1.6rem; line-height: 1; }
+  .howto-animal-card .hac-label { font-size: 0.58rem; color: var(--muted); font-weight: 700; }
+  .howto-animal-card .hac-inst  { font-size: 0.64rem; font-weight: 700; text-align: center; line-height: 1.3; }
+
+  .howto-animal-card.is-truth {
+    border-color: rgba(123,237,159,0.5);
+    background: rgba(123,237,159,0.07);
+  }
+
+  .howto-example-desc {
+    font-size: 0.76rem;
+    color: var(--text);
+    line-height: 1.55;
+    margin-top: 8px;
+    border-left: 2px solid rgba(255,215,0,0.3);
+    padding-left: 8px;
+  }
+
+  /* ===== /遊び方例ゾーン ===== */
+
   .setting-group label {
     display: block;
     font-size: 0.8rem;
@@ -314,7 +423,7 @@
     50% { transform: scale(1.1); }
   }
 
-  /* 保証動物バッジ */
+  /* ボス動物バッジ */
   .guaranteed-badge {
     display: flex; align-items: center; gap: 6px;
     background: rgba(255,107,157,0.15); border: 1.5px solid rgba(255,107,157,0.4);
@@ -567,33 +676,155 @@
         </li>
         <li>
           <span class="howto-icon">🎨</span>
-          <span>本物カードに書かれた<strong>指示色のボタン</strong>を押す</span>
+          <span>
+            本物の動物のカードに書かれた<strong>「色名」のボタンを押す</strong>（文字の色ではなく、書かれている色名で判断）<br>
+            <span style="font-size:0.76rem;color:var(--muted);">例: 赤い文字で「青いボタンをタップ」と書いてあったら、押すのは「青」のボタン</span>
+          </span>
         </li>
         <li>
           <span class="howto-icon">⭐</span>
-          <span><span class="tag-guaranteed">無条件本物動物</span>が4匹に出たら<strong>ルール無視で必ずそれが本物</strong></span>
+          <span><span class="tag-guaranteed">ボス動物</span>（設定で選んだ1匹）が4枚に出たら<strong>ルールに関係なく必ずそれが本物</strong></span>
         </li>
         <li>
           <span class="howto-icon">❌</span>
           <span>答えなしのときは<strong>「答えなし」ボタン</strong>を押すと正解（+10点）</span>
         </li>
       </ul>
+
+      <!-- 実例ミニチュア -->
+      <div class="howto-examples">
+
+        <!-- 例1: 1匹だけ一致 -->
+        <div class="howto-example">
+          <span class="howto-example-label ex1">例1 ── 1匹だけ一致パターン</span>
+          <div class="howto-example-zone">
+            <div class="howto-zone-label">🔍 ヒントゾーン</div>
+            <div class="howto-zone-row">
+              <div class="howto-chip"><span class="hc-emoji">🦊</span><span class="hc-name">きつね</span></div>
+              <div class="howto-chip"><span class="hc-emoji">🐭</span><span class="hc-name">ねずみ</span></div>
+              <div class="howto-chip"><span class="hc-emoji">🐸</span><span class="hc-name">かえる</span></div>
+            </div>
+          </div>
+          <div class="howto-example-grid">
+            <div class="howto-animal-card">
+              <span class="hac-face">🐶</span>
+              <span class="hac-label">いぬ</span>
+              <span class="hac-inst" style="color:#2980b9;">青いボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card is-truth">
+              <span class="hac-face">🦊</span>
+              <span class="hac-label">きつね ✓本物</span>
+              <span class="hac-inst" style="color:#e74c3c;">赤いボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card">
+              <span class="hac-face">🐻</span>
+              <span class="hac-label">くま</span>
+              <span class="hac-inst" style="color:#27ae60;">緑のボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card">
+              <span class="hac-face">🐰</span>
+              <span class="hac-label">うさぎ</span>
+              <span class="hac-inst" style="color:#f1c40f;">黄色いボタンを<br>タップ</span>
+            </div>
+          </div>
+          <div class="howto-example-desc">
+            ヒントゾーンと4枚の中で一致するのは 🦊 だけ → 🦊 が本物 → 🦊 のカードに書いてある「赤」のボタンを押す
+          </div>
+        </div>
+
+        <!-- 例2: 3匹一致 -->
+        <div class="howto-example">
+          <span class="howto-example-label ex2">例2 ── 3匹一致パターン</span>
+          <div class="howto-example-zone">
+            <div class="howto-zone-label">🔍 ヒントゾーン</div>
+            <div class="howto-zone-row">
+              <div class="howto-chip"><span class="hc-emoji">🐶</span><span class="hc-name">いぬ</span></div>
+              <div class="howto-chip"><span class="hc-emoji">🦊</span><span class="hc-name">きつね</span></div>
+              <div class="howto-chip"><span class="hc-emoji">🐰</span><span class="hc-name">うさぎ</span></div>
+            </div>
+          </div>
+          <div class="howto-example-grid">
+            <div class="howto-animal-card">
+              <span class="hac-face">🐶</span>
+              <span class="hac-label">いぬ</span>
+              <span class="hac-inst" style="color:#f1c40f;">黄色いボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card">
+              <span class="hac-face">🦊</span>
+              <span class="hac-label">きつね</span>
+              <span class="hac-inst" style="color:#2980b9;">青いボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card">
+              <span class="hac-face">🐰</span>
+              <span class="hac-label">うさぎ</span>
+              <span class="hac-inst" style="color:#e74c3c;">赤いボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card is-truth">
+              <span class="hac-face">🐻</span>
+              <span class="hac-label">くま ✓本物</span>
+              <span class="hac-inst" style="color:#27ae60;">緑のボタンを<br>タップ</span>
+            </div>
+          </div>
+          <div class="howto-example-desc">
+            3匹一致しているので、唯一いない 🐻 が本物 → 🐻 のカードに書いてある「緑」のボタンを押す
+          </div>
+        </div>
+
+        <!-- 例3: 答えなし -->
+        <div class="howto-example">
+          <span class="howto-example-label ex3">例3 ── 答えなしパターン</span>
+          <div class="howto-example-zone">
+            <div class="howto-zone-label">🔍 ヒントゾーン</div>
+            <div class="howto-zone-row">
+              <div class="howto-chip"><span class="hc-emoji">🐭</span><span class="hc-name">ねずみ</span></div>
+              <div class="howto-chip"><span class="hc-emoji">🐸</span><span class="hc-name">かえる</span></div>
+              <div class="howto-chip"><span class="hc-emoji">🐯</span><span class="hc-name">とら</span></div>
+            </div>
+          </div>
+          <div class="howto-example-grid">
+            <div class="howto-animal-card">
+              <span class="hac-face">🐶</span>
+              <span class="hac-label">いぬ</span>
+              <span class="hac-inst" style="color:#2980b9;">青いボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card">
+              <span class="hac-face">🐭</span>
+              <span class="hac-label">ねずみ</span>
+              <span class="hac-inst" style="color:#e74c3c;">赤いボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card">
+              <span class="hac-face">🐸</span>
+              <span class="hac-label">かえる</span>
+              <span class="hac-inst" style="color:#f1c40f;">黄色いボタンを<br>タップ</span>
+            </div>
+            <div class="howto-animal-card">
+              <span class="hac-face">🐻</span>
+              <span class="hac-label">くま</span>
+              <span class="hac-inst" style="color:#27ae60;">緑のボタンを<br>タップ</span>
+            </div>
+          </div>
+          <div class="howto-example-desc">
+            一致が🐭・🐸 の2匹 → 答えなし →「答えなし」ボタンを押すのが正解
+          </div>
+        </div>
+
+      </div><!-- /howto-examples -->
     </div>
 
-    <!-- 保証動物バッジ表示設定 -->
+    <!-- ボス動物バッジ表示設定 -->
     <div class="setting-group">
-      <label>ゲーム中に保証動物を表示する</label>
+      <label>ゲーム中にボス動物を表示する</label>
       <div class="options">
         <button class="option-btn" data-badge="on" onclick="selectBadgeDisplay(true)">👁 表示する</button>
         <button class="option-btn selected" data-badge="off" onclick="selectBadgeDisplay(false)">🙈 表示しない（デフォルト）</button>
       </div>
     </div>
 
-    <!-- 無条件で本物の動物 -->
+    <!-- ボス動物 -->
     <div class="setting-group">
-      <label>出たら無条件で本物の動物（1匹選択）</label>
+      <label>ボス動物を選ぶ（出たら必ず本物）</label>
       <div class="truth-animal-select" id="guaranteed-animal-select"></div>
-      <p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">※ この動物が出たラウンドは無条件で本物の指示を言います</p>
+      <p style="font-size:0.75rem;color:var(--muted);margin-top:8px;">※ この動物が出たラウンドは必ず本物の指示を言います</p>
     </div>
 
     <!-- お手つきペナルティ -->
@@ -675,10 +906,10 @@
     </div>
   </div>
 
-  <!-- 保証動物バッジ（showGuaranteedBadge設定時のみ表示） -->
+  <!-- ボス動物バッジ（showGuaranteedBadge設定時のみ表示） -->
   <div class="guaranteed-badge" id="guaranteed-badge" style="display:none;">
     <span class="badge-emoji" id="guaranteed-badge-emoji">🐱</span>
-    <span id="guaranteed-badge-text">ねこ：無条件本物</span>
+    <span id="guaranteed-badge-text">ねこ ボス動物（必ず正解）</span>
   </div>
 
   <!-- スコアボード（マルチ時） -->
@@ -1054,7 +1285,7 @@ function updateGuaranteedBadge() {
   }
   const a = ANIMALS[state.guaranteedAnimal];
   document.getElementById('guaranteed-badge-emoji').textContent = a.emoji;
-  document.getElementById('guaranteed-badge-text').textContent = a.name + '：無条件本物';
+  document.getElementById('guaranteed-badge-text').textContent = a.emoji + ' ボス動物（必ず正解）';
   badge.style.display = 'flex';
 }
 
