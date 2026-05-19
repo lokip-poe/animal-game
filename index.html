@@ -1420,15 +1420,17 @@ function nextRound() {
     zoneAnimals: zoneAnimals.slice(), selected4: selected4.slice(),
   });
 
+  // cardInstructions を常に生成（ホスト/ソロ共通の描画データ）
+  const inst4 = state.currentInstruction;
+  const fakeInst4 = INSTRUCTIONS.filter(function(i){ return i.action !== inst4.action; });
+  const cardInstructions = selected4.map(function(key) {
+    const isTruth = key === truthKey;
+    const txt = isTruth ? inst4.text : fakeInst4[Math.floor(Math.random() * fakeInst4.length)].text;
+    const col = COLORS[Math.floor(Math.random() * COLORS.length)].bg;
+    return { text: txt, color: col };
+  });
+
   if (mp.mode === 'host') {
-    const inst4 = state.currentInstruction;
-    const fakeInst4 = INSTRUCTIONS.filter(function(i){ return i.action !== inst4.action; });
-    const cardInstructions = selected4.map(function(key) {
-      const isTruth = key === truthKey;
-      const txt = isTruth ? inst4.text : fakeInst4[Math.floor(Math.random() * fakeInst4.length)].text;
-      const col = COLORS[Math.floor(Math.random() * COLORS.length)].bg;
-      return { text: txt, color: col };
-    });
     broadcastToGuests({
       type: 'round',
       round: state.round,
@@ -1440,7 +1442,7 @@ function nextRound() {
     });
   }
 
-  renderRound(selected4, zoneAnimals, truthKey);
+  renderRound(selected4, zoneAnimals, truthKey, cardInstructions);
   startTimer();
 }
 
@@ -1521,28 +1523,21 @@ function handleRoundResult(data) {
 }
 
 // ===== 描画 =====
-function renderRound(animalKeys, zoneAnimals, truthKey) {
+function renderRound(animalKeys, zoneAnimals, truthKey, cardInstructions) {
   document.getElementById('round-badge').textContent = 'ラウンド ' + state.round + ' / ' + state.totalRounds;
   document.getElementById('score-display').textContent = state.score + 'pt';
 
   if (mp.mode !== 'solo') renderScoreboard();
-
-  const inst = state.currentInstruction;
-  const fakeInstructions = INSTRUCTIONS.filter(function(i){ return i.action !== inst.action; });
 
   document.getElementById('liar-animals-row').innerHTML = zoneAnimals.map(function(key) {
     const a = ANIMALS[key];
     return '<div class="liar-chip"><span class="chip-emoji">' + a.emoji + '</span><span class="chip-name">' + a.name + '</span></div>';
   }).join('');
 
-  document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key) {
+  document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key, idx) {
     const a = ANIMALS[key];
-    const isTruth = key === truthKey;
-    const displayInst = isTruth
-      ? inst.text
-      : fakeInstructions[Math.floor(Math.random() * fakeInstructions.length)].text;
-    const textColor = COLORS[Math.floor(Math.random() * COLORS.length)].bg;
-    return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + textColor + '">' + displayInst.replace(/\n/g, '<br>') + '</div></div>';
+    const ci = cardInstructions[idx];
+    return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + ci.color + '">' + ci.text.replace(/\n/g, '<br>') + '</div></div>';
   }).join('');
 
   renderColorButtons(true);
@@ -1555,19 +1550,15 @@ function renderRoundGuest(animalKeys, zoneAnimals, instruction, cardInstructions
 
   renderScoreboard();
 
-  const fakeInstructions = INSTRUCTIONS.filter(function(i){ return i.action !== instruction.action; });
-
   document.getElementById('liar-animals-row').innerHTML = zoneAnimals.map(function(key) {
     const a = ANIMALS[key];
     return '<div class="liar-chip"><span class="chip-emoji">' + a.emoji + '</span><span class="chip-name">' + a.name + '</span></div>';
   }).join('');
 
-  // ホストから受信したcardInstructionsで描画（正しい指示を表示）
+  // ホストから受信したcardInstructionsのみで描画（フォールバックなし）
   document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key, idx) {
     const a = ANIMALS[key];
-    const ci = (cardInstructions && cardInstructions[idx])
-      ? cardInstructions[idx]
-      : { text: fakeInstructions[Math.floor(Math.random() * fakeInstructions.length)].text, color: COLORS[Math.floor(Math.random() * COLORS.length)].bg };
+    const ci = cardInstructions[idx];
     return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + ci.color + '">' + ci.text.replace(/\n/g, '<br>') + '</div></div>';
   }).join('');
 
