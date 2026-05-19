@@ -65,6 +65,19 @@
 
   .title-logo p { color: var(--muted); font-size: 1rem; margin-top: 8px; }
 
+  /* テーマラベルバッジ */
+  .theme-label-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 10px;
+    background: rgba(255,215,0,0.12);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 100px;
+    font-size: 0.72rem;
+    color: var(--accent2);
+    letter-spacing: 0.08em;
+  }
+
   .animals-preview {
     display: flex; gap: 16px; font-size: 3rem;
     animation: float 3s ease-in-out infinite;
@@ -79,6 +92,35 @@
   .animal-emoji:nth-child(2) { animation-delay: 0.3s; }
   .animal-emoji:nth-child(3) { animation-delay: 0.6s; }
   .animal-emoji:nth-child(4) { animation-delay: 0.9s; }
+
+  /* 動物画像クラス */
+  .animal-img {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.15em;
+    object-fit: contain;
+  }
+
+  /* カード・チップ内の動物表示領域 */
+  .animal-card .animal-face {
+    font-size: 2.4rem;
+    line-height: 1;
+    width: 2.4rem;
+    height: 2.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .liar-chip .chip-emoji {
+    font-size: 2rem;
+    line-height: 1;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
   /* 設定パネル */
   .settings-panel {
@@ -467,7 +509,6 @@
     display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
 
-  .animal-card .animal-face { font-size: 2.4rem; line-height: 1; }
   .animal-card .animal-label { font-size: 0.7rem; color: var(--muted); font-weight: 700; }
   .animal-card .instruction-text {
     font-size: clamp(0.78rem, 2.2vw, 0.92rem); font-weight: 700;
@@ -496,7 +537,6 @@
     border-radius: 14px; padding: 10px 16px; min-width: 72px;
   }
 
-  .liar-chip .chip-emoji { font-size: 2rem; line-height: 1; }
   .liar-chip .chip-name { font-size: 0.7rem; color: rgba(255,255,255,0.5); }
 
   /* 操作エリア */
@@ -645,7 +685,7 @@
 <!-- タイトル画面 -->
 <div id="title-screen" class="screen active">
   <div class="title-logo">
-    <div class="animals-preview">
+    <div class="animals-preview" id="title-animals-preview">
       <span class="animal-emoji">🐶</span>
       <span class="animal-emoji">🦊</span>
       <span class="animal-emoji">🐱</span>
@@ -657,6 +697,7 @@
     </div>
     <h1>どれがホント？</h1>
     <p>嘘つきを見破れ！混乱早押しゲーム</p>
+    <span class="theme-label-badge" id="theme-label-badge" style="display:none;"></span>
   </div>
 
   <div class="settings-panel">
@@ -969,18 +1010,73 @@
 <div class="disconnect-toast" id="disconnect-toast">ホストが切断しました</div>
 
 <script>
-// ===== 定数 =====
-const ANIMALS = {
-  dog:    { emoji: '🐶', name: 'いぬ' },
-  fox:    { emoji: '🦊', name: 'きつね' },
-  cat:    { emoji: '🐱', name: 'ねこ' },
-  mouse:  { emoji: '🐭', name: 'ねずみ' },
-  frog:   { emoji: '🐸', name: 'かえる' },
-  bear:   { emoji: '🐻', name: 'くま' },
-  rabbit: { emoji: '🐰', name: 'うさぎ' },
-  tiger:  { emoji: '🐯', name: 'とら' },
+// ===== テーマ定義 =====
+const THEMES = {
+  animals: {
+    label: '動物',
+    animals: [
+      { key: 'dog',    emoji: '🐶', name: 'いぬ' },
+      { key: 'cat',    emoji: '🐱', name: 'ねこ' },
+      { key: 'fox',    emoji: '🦊', name: 'きつね' },
+      { key: 'mouse',  emoji: '🐭', name: 'ねずみ' },
+      { key: 'frog',   emoji: '🐸', name: 'かえる' },
+      { key: 'bear',   emoji: '🐻', name: 'くま' },
+      { key: 'rabbit', emoji: '🐰', name: 'うさぎ' },
+      { key: 'tiger',  emoji: '🐯', name: 'とら' },
+    ]
+  },
+  dogs: {
+    label: 'わんこ',
+    animals: [
+      { key: 'shiba',        emoji: '🐕',    name: '柴犬',               image: 'assets/dogs/shiba.png' },
+      { key: 'golden',       emoji: '🦮',    name: 'ゴールデンレトリバー', image: 'assets/dogs/golden.png' },
+      { key: 'corgi',        emoji: '🐕',    name: 'コーギー',            image: 'assets/dogs/corgi.png' },
+      { key: 'husky',        emoji: '🐺',    name: 'ハスキー',            image: 'assets/dogs/husky.png' },
+      { key: 'samoyed',      emoji: '🐕',    name: 'サモエド',            image: 'assets/dogs/samoyed.png' },
+      { key: 'pomeranian',   emoji: '🐶',    name: 'ポメラニアン',         image: 'assets/dogs/pomeranian.png' },
+      { key: 'toypoodle',    emoji: '🐩',    name: 'トイプードル',         image: 'assets/dogs/toypoodle.png' },
+      { key: 'bordercollie', emoji: '🐕‍🦺', name: 'ボーダーコリー',      image: 'assets/dogs/bordercollie.png' },
+    ]
+  }
 };
 
+// ===== URLパラメータでテーマ決定 =====
+(function() {
+  var param = new URLSearchParams(location.search).get('theme');
+  window._currentTheme = (param && THEMES[param]) ? param : 'animals';
+})();
+
+function getCurrentTheme() { return window._currentTheme; }
+function getThemeAnimals()  { return THEMES[getCurrentTheme()].animals; }
+
+function getAnimalByKey(key) {
+  return getThemeAnimals().find(function(a){ return a.key === key; }) || null;
+}
+
+function getAnimalKeys() {
+  return getThemeAnimals().map(function(a){ return a.key; });
+}
+
+// ===== 動物アイコン描画ヘルパー =====
+// size: 'card' | 'chip' | 'badge' | 'inline'
+function renderAnimalIcon(animal, size) {
+  if (!animal) return '';
+  var sizeStyles = {
+    card:   'width:100%;height:100%;object-fit:contain;display:block;',
+    chip:   'width:100%;height:100%;object-fit:contain;display:block;',
+    badge:  'width:1.1rem;height:1.1rem;vertical-align:-0.15em;object-fit:contain;',
+    inline: 'width:1em;height:1em;vertical-align:-0.15em;object-fit:contain;',
+  };
+  var style = sizeStyles[size] || sizeStyles['inline'];
+  if (animal.image) {
+    // onerror: imgをemoji文字に置換
+    var fb = animal.emoji.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    return '<img src="' + animal.image + '" alt="' + animal.name + '" style="' + style + '" onerror="this.outerHTML=this.dataset.fallback" data-fallback="' + fb + '">';
+  }
+  return animal.emoji;
+}
+
+// ===== カラー / 指示 定数 =====
 const COLORS = [
   { id: 'red',    label: '赤', bg: '#e74c3c' },
   { id: 'blue',   label: '青', bg: '#2980b9' },
@@ -999,7 +1095,7 @@ const PLAYER_COLORS = ['#ff6b35','#7bed9f','#74b9ff','#ffd700','#ff4757','#a29bf
 
 // ===== 状態 =====
 let state = {
-  guaranteedAnimal: 'cat',
+  guaranteedAnimal: null,
   showBadge: false,
   penalty: 'freeze',
   totalRounds: 10,
@@ -1032,7 +1128,7 @@ let mp = {
 // ===== 設定 =====
 function setMode(mode) {
   mp.mode = mode;
-  document.querySelectorAll('.mode-tab').forEach((b, i) => {
+  document.querySelectorAll('.mode-tab').forEach(function(b, i) {
     b.classList.toggle('active', ['solo','host','guest'][i] === mode);
   });
   document.getElementById('panel-solo').style.display  = mode === 'solo'  ? '' : 'none';
@@ -1050,27 +1146,30 @@ function selectBadgeDisplay(show) {
 
 function selectGuaranteedAnimal(animal) {
   state.guaranteedAnimal = animal;
-  document.querySelectorAll('.animal-option').forEach(b => b.classList.remove('selected'));
-  document.querySelector('[data-animal="' + animal + '"]').classList.add('selected');
+  document.querySelectorAll('.animal-option').forEach(function(b){ b.classList.remove('selected'); });
+  var target = document.querySelector('[data-animal="' + animal + '"]');
+  if (target) target.classList.add('selected');
 }
 
 function renderGuaranteedAnimalSelect() {
-  const el = document.getElementById('guaranteed-animal-select');
-  el.innerHTML = Object.entries(ANIMALS).map(([key, a]) =>
-    '<button class="animal-option ' + (key === state.guaranteedAnimal ? 'selected' : '') + '" data-animal="' + key + '" onclick="selectGuaranteedAnimal(\'' + key + '\')">' +
-    '<span class="emoji">' + a.emoji + '</span><span>' + a.name + '</span></button>'
-  ).join('');
+  var animals = getThemeAnimals();
+  var el = document.getElementById('guaranteed-animal-select');
+  el.innerHTML = animals.map(function(a) {
+    var isSelected = (a.key === state.guaranteedAnimal);
+    return '<button class="animal-option ' + (isSelected ? 'selected' : '') + '" data-animal="' + a.key + '" onclick="selectGuaranteedAnimal(\'' + a.key + '\')">' +
+      '<span class="emoji">' + renderAnimalIcon(a, 'inline') + '</span><span>' + a.name + '</span></button>';
+  }).join('');
 }
 
 function selectPenalty(penalty) {
   state.penalty = penalty;
-  document.querySelectorAll('[data-penalty]').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('[data-penalty]').forEach(function(b){ b.classList.remove('selected'); });
   document.querySelector('[data-penalty="' + penalty + '"]').classList.add('selected');
 }
 
 function selectRounds(n) {
   state.totalRounds = n;
-  document.querySelectorAll('[data-rounds]').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('[data-rounds]').forEach(function(b){ b.classList.remove('selected'); });
   document.querySelector('[data-rounds="' + n + '"]').classList.add('selected');
 }
 
@@ -1102,13 +1201,13 @@ function createRoom() {
   mp.peer.on('connection', function(conn) {
     conn.on('open', function() {
       mp.connections.push(conn);
-      // 設定とルームコード、現在の参加者一覧を送信
+      // 設定・テーマ・ルームコード・参加者一覧をwelcomeで送信
       conn.send({ type: 'welcome', settings: {
         guaranteedAnimal: state.guaranteedAnimal,
         showBadge: state.showBadge,
         penalty: state.penalty,
         totalRounds: state.totalRounds,
-      }, roomCode: mp.roomCode, roster: buildRoster() });
+      }, theme: getCurrentTheme(), roomCode: mp.roomCode, roster: buildRoster() });
       refreshGuestList();
     });
     conn.on('data', function(data) {
@@ -1239,6 +1338,10 @@ function joinRoom() {
 
 function onGuestReceive(data) {
   if (data.type === 'welcome') {
+    // ホストのテーマで上書き（ゲスト側URLテーマより優先）
+    if (data.theme && THEMES[data.theme]) {
+      window._currentTheme = data.theme;
+    }
     state.guaranteedAnimal = data.settings.guaranteedAnimal;
     state.showBadge        = data.settings.showBadge;
     state.penalty          = data.settings.penalty;
@@ -1349,9 +1452,10 @@ function updateGuaranteedBadge() {
     badge.style.display = 'none';
     return;
   }
-  const a = ANIMALS[state.guaranteedAnimal];
-  document.getElementById('guaranteed-badge-emoji').textContent = a.emoji;
-  document.getElementById('guaranteed-badge-text').textContent = a.emoji + ' ボス動物（必ず正解）';
+  const a = getAnimalByKey(state.guaranteedAnimal);
+  if (!a) { badge.style.display = 'none'; return; }
+  document.getElementById('guaranteed-badge-emoji').innerHTML = renderAnimalIcon(a, 'badge');
+  document.getElementById('guaranteed-badge-text').textContent = a.name + ' ボス動物（必ず正解）';
   badge.style.display = 'flex';
 }
 
@@ -1370,7 +1474,7 @@ function nextRound() {
   mp.roundAnswered = false;
   mp.lockedPlayers = {};
 
-  const allKeys = Object.keys(ANIMALS);
+  const allKeys = getAnimalKeys();
   const guaranteed = state.guaranteedAnimal;
   const zonePool = allKeys.filter(function(k){ return k !== guaranteed; });
   const zoneAnimals = shuffle(zonePool).slice(0, 3);
@@ -1380,8 +1484,6 @@ function nextRound() {
 
   if (Math.random() < 0.1) {
     // ===== 10%: 確定動物ラウンド =====
-    // ゾーン3匹からランダムに2匹 + ゾーン外プールから1匹
-    // → ルール上は「2匹一致=答えなし」に見えるが保証動物が正解（トラップ）
     const twoFromZone = shuffle(zoneAnimals).slice(0, 2);
     const outOfZonePool = zonePool.filter(function(k){ return !zoneAnimals.includes(k); });
     const oneOutside = shuffle(outOfZonePool).slice(0, 1);
@@ -1420,7 +1522,6 @@ function nextRound() {
     zoneAnimals: zoneAnimals.slice(), selected4: selected4.slice(),
   });
 
-  // cardInstructions を常に生成（ホスト/ソロ共通の描画データ）
   const inst4 = state.currentInstruction;
   const fakeInst4 = INSTRUCTIONS.filter(function(i){ return i.action !== inst4.action; });
   const cardInstructions = selected4.map(function(key) {
@@ -1499,15 +1600,15 @@ function handleRoundResult(data) {
   mp.players = data.players;
   renderScoreboard();
 
-  // 自分のスコアを更新（mp.playersから自分を探す）
   const myPlayer = mp.players.find(function(p){ return p.id === mp.myId; });
   if (myPlayer) {
     state.score = myPlayer.score;
     document.getElementById('score-display').textContent = state.score + 'pt';
   }
 
-  const revealMsg = data.truthAnimal
-    ? ('答えは ' + ANIMALS[data.truthAnimal].emoji + ' ' + ANIMALS[data.truthAnimal].name + ' でした')
+  var revealAnimal = data.truthAnimal ? getAnimalByKey(data.truthAnimal) : null;
+  var revealMsg = revealAnimal
+    ? ('答えは ' + renderAnimalIcon(revealAnimal, 'inline') + ' ' + revealAnimal.name + ' でした')
     : '答えなしでした！';
 
   if (data.correct) {
@@ -1530,14 +1631,16 @@ function renderRound(animalKeys, zoneAnimals, truthKey, cardInstructions) {
   if (mp.mode !== 'solo') renderScoreboard();
 
   document.getElementById('liar-animals-row').innerHTML = zoneAnimals.map(function(key) {
-    const a = ANIMALS[key];
-    return '<div class="liar-chip"><span class="chip-emoji">' + a.emoji + '</span><span class="chip-name">' + a.name + '</span></div>';
+    var a = getAnimalByKey(key);
+    if (!a) return '';
+    return '<div class="liar-chip"><span class="chip-emoji">' + renderAnimalIcon(a, 'chip') + '</span><span class="chip-name">' + a.name + '</span></div>';
   }).join('');
 
   document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key, idx) {
-    const a = ANIMALS[key];
-    const ci = cardInstructions[idx];
-    return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + ci.color + '">' + ci.text.replace(/\n/g, '<br>') + '</div></div>';
+    var a = getAnimalByKey(key);
+    if (!a) return '';
+    var ci = cardInstructions[idx];
+    return '<div class="animal-card"><div class="animal-face">' + renderAnimalIcon(a, 'card') + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + ci.color + '">' + ci.text.replace(/\n/g, '<br>') + '</div></div>';
   }).join('');
 
   renderColorButtons(true);
@@ -1551,15 +1654,17 @@ function renderRoundGuest(animalKeys, zoneAnimals, instruction, cardInstructions
   renderScoreboard();
 
   document.getElementById('liar-animals-row').innerHTML = zoneAnimals.map(function(key) {
-    const a = ANIMALS[key];
-    return '<div class="liar-chip"><span class="chip-emoji">' + a.emoji + '</span><span class="chip-name">' + a.name + '</span></div>';
+    var a = getAnimalByKey(key);
+    if (!a) return '';
+    return '<div class="liar-chip"><span class="chip-emoji">' + renderAnimalIcon(a, 'chip') + '</span><span class="chip-name">' + a.name + '</span></div>';
   }).join('');
 
-  // ホストから受信したcardInstructionsのみで描画（フォールバックなし）
+  // ホストから受信したcardInstructionsのみで描画
   document.getElementById('animals-grid').innerHTML = animalKeys.map(function(key, idx) {
-    const a = ANIMALS[key];
-    const ci = cardInstructions[idx];
-    return '<div class="animal-card"><div class="animal-face">' + a.emoji + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + ci.color + '">' + ci.text.replace(/\n/g, '<br>') + '</div></div>';
+    var a = getAnimalByKey(key);
+    if (!a) return '';
+    var ci = cardInstructions[idx];
+    return '<div class="animal-card"><div class="animal-face">' + renderAnimalIcon(a, 'card') + '</div><div class="animal-label">' + a.name + '</div><div class="instruction-text" style="color:' + ci.color + '">' + ci.text.replace(/\n/g, '<br>') + '</div></div>';
   }).join('');
 
   renderColorButtons(true);
@@ -1614,9 +1719,10 @@ function timeUp() {
   }
 
   const wasAnswerless = !state.currentTruthAnimal;
+  var truthAnimal = state.currentTruthAnimal ? getAnimalByKey(state.currentTruthAnimal) : null;
   const msg = wasAnswerless
     ? '答えなしでした！正解！'
-    : ('答えは ' + ANIMALS[state.currentTruthAnimal].emoji + ' ' + ANIMALS[state.currentTruthAnimal].name + ' でした');
+    : ('答えは ' + renderAnimalIcon(truthAnimal, 'inline') + ' ' + truthAnimal.name + ' でした');
 
   if (wasAnswerless) state.score += 5;
   document.getElementById('score-display').textContent = state.score + 'pt';
@@ -1748,7 +1854,6 @@ function handleMultiAnswer(guestId, colorId, isNoAnswer) {
   const conn = mp.connections.find(function(c){ return c.peer === guestId; });
   const guestName = (conn && conn.metadata) ? conn.metadata.name : 'ゲスト';
 
-  // per-playerロックチェック（お手付き後の連打防止）
   if (mp.lockedPlayers[guestId]) return;
 
   const guestPlayer = mp.players.find(function(p){ return p.id === guestId; });
@@ -1830,8 +1935,8 @@ function showFeedback(emoji, title, msg, correct) {
   const overlay = document.getElementById('feedback-overlay');
   const content = document.getElementById('feedback-content');
   document.getElementById('feedback-emoji').textContent = emoji;
-  document.getElementById('feedback-player').textContent = title;
-  document.getElementById('feedback-msg').textContent = msg;
+  document.getElementById('feedback-player').innerHTML = title;
+  document.getElementById('feedback-msg').innerHTML = msg;
   content.className = 'feedback-content ' + (correct ? 'correct' : 'wrong');
   overlay.classList.add('show');
   setTimeout(function(){ overlay.classList.remove('show'); }, 2000);
@@ -1901,9 +2006,42 @@ function shuffle(arr) {
   return a;
 }
 
-// 初期化
-renderGuaranteedAnimalSelect();
-updateGuaranteedBadge();
+// ===== 初期化 =====
+(function init() {
+  var theme = getCurrentTheme();
+  var animals = getThemeAnimals();
+
+  // guaranteedAnimalをテーマに合わせて初期化
+  // animalsテーマは従来通り'cat'をデフォルト
+  state.guaranteedAnimal = (theme === 'animals') ? 'cat' : animals[0].key;
+
+  // タイトルプレビューをテーマに合わせて更新
+  var preview = document.getElementById('title-animals-preview');
+  if (preview) {
+    preview.innerHTML = animals.slice(0, 8).map(function(a, i) {
+      var delay = 'animation-delay:' + (i * 0.3) + 's;';
+      if (a.image) {
+        var fb = a.emoji.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+        return '<span class="animal-emoji" style="' + delay + '"><img src="' + a.image + '" alt="' + a.name + '" style="width:3rem;height:3rem;object-fit:contain;" onerror="this.outerHTML=this.dataset.fallback" data-fallback="' + fb + '"></span>';
+      }
+      return '<span class="animal-emoji" style="' + delay + '">' + a.emoji + '</span>';
+    }).join('');
+  }
+
+  // テーマラベルバッジ（animalsテーマ以外で表示）
+  var badge = document.getElementById('theme-label-badge');
+  if (badge) {
+    if (theme !== 'animals') {
+      badge.textContent = 'テーマ: ' + THEMES[theme].label;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  renderGuaranteedAnimalSelect();
+  updateGuaranteedBadge();
+})();
 </script>
 </body>
 </html>
