@@ -888,6 +888,19 @@
           <span id="guest-status-text">ルームコードを入力して接続</span>
         </div>
         <button class="btn-sm" onclick="joinRoom()">ルームに参加</button>
+        <!-- 待機中の参加者リスト（接続後に表示） -->
+        <div id="guest-waiting-panel" style="display:none;">
+          <div class="room-code-display" style="margin-top:4px;">
+            <div class="code-label">参加中のルーム</div>
+            <div class="code-value" id="guest-room-code-value">----</div>
+          </div>
+          <div style="font-size:0.75rem;color:var(--muted);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.08em;">参加者</div>
+          <div class="guest-list" id="guest-roster-list"></div>
+          <div class="connection-status" style="margin-top:8px;justify-content:center;">
+            <div class="conn-dot waiting"></div>
+            <span style="font-size:0.8rem;color:var(--muted);">ホストがゲームを開始するのを待っています…</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1089,13 +1102,13 @@ function createRoom() {
   mp.peer.on('connection', function(conn) {
     conn.on('open', function() {
       mp.connections.push(conn);
-      // 設定を送信
+      // 設定とルームコード、現在の参加者一覧を送信
       conn.send({ type: 'welcome', settings: {
         guaranteedAnimal: state.guaranteedAnimal,
         showBadge: state.showBadge,
         penalty: state.penalty,
         totalRounds: state.totalRounds,
-      }});
+      }, roomCode: mp.roomCode, roster: buildRoster() });
       refreshGuestList();
     });
     conn.on('data', function(data) {
@@ -1103,6 +1116,7 @@ function createRoom() {
         conn.metadata = { name: data.name };
         refreshGuestList();
         broadcastToGuests({ type: 'players', players: buildPlayers() });
+        broadcastToGuests({ type: 'roster', roomCode: mp.roomCode, roster: buildRoster() });
         return;
       }
       if (data.type === 'answer') {
@@ -1114,6 +1128,7 @@ function createRoom() {
       mp.connections = mp.connections.filter(function(c){ return c !== conn; });
       refreshGuestList();
       broadcastToGuests({ type: 'players', players: buildPlayers() });
+      broadcastToGuests({ type: 'roster', roomCode: mp.roomCode, roster: buildRoster() });
     });
     conn.on('error', function(err) {
       console.error('conn error', err);
@@ -1144,6 +1159,20 @@ function buildPlayers() {
     };
   });
   return [hostPlayer].concat(guests);
+}
+
+function buildRoster() {
+  const hostName = mp.myName || document.getElementById('host-name').value || 'ホスト';
+  const hostEntry = { id: 'host', name: hostName, color: PLAYER_COLORS[0], isHost: true };
+  const guestEntries = mp.connections.map(function(conn, i) {
+    return {
+      id: conn.peer,
+      name: conn.metadata ? conn.metadata.name : ('ゲスト' + (i+1)),
+      color: PLAYER_COLORS[(i+1) % PLAYER_COLORS.length],
+      isHost: false,
+    };
+  });
+  return [hostEntry].concat(guestEntries);
 }
 
 function refreshGuestList() {
@@ -1214,6 +1243,23 @@ function onGuestReceive(data) {
     state.showBadge        = data.settings.showBadge;
     state.penalty          = data.settings.penalty;
     state.totalRounds      = data.settings.totalRounds;
+    if (data.roomCode) {
+      mp.roomCode = data.roomCode;
+      document.getElementById('guest-room-code-value').textContent = data.roomCode;
+    }
+    if (data.roster) {
+      renderGuestRoster(data.roster);
+      document.getElementById('guest-waiting-panel').style.display = '';
+    }
+    return;
+  }
+  if (data.type === 'roster') {
+    if (data.roomCode) {
+      mp.roomCode = data.roomCode;
+      document.getElementById('guest-room-code-value').textContent = data.roomCode;
+    }
+    renderGuestRoster(data.roster);
+    document.getElementById('guest-waiting-panel').style.display = '';
     return;
   }
   if (data.type === 'players') {
@@ -1248,6 +1294,21 @@ function onGuestReceive(data) {
     showResult();
     return;
   }
+}
+
+function renderGuestRoster(roster) {
+  const list = document.getElementById('guest-roster-list');
+  if (!roster || !roster.length) {
+    list.innerHTML = '<span style="font-size:0.8rem;color:var(--muted)">まだ誰も参加していません</span>';
+    return;
+  }
+  list.innerHTML = roster.map(function(p) {
+    const isMe = (p.id === mp.myId);
+    const hostBadge = p.isHost ? ' 🛡️' : '';
+    const meBadge = isMe ? ' <span style="font-size:0.75rem;color:var(--accent3);font-weight:700;">(あなた)</span>' : '';
+    const nameStyle = isMe ? 'font-weight:700;color:var(--text);' : '';
+    return '<div class="guest-chip"><div class="g-dot" style="background:' + p.color + '"></div><span style="' + nameStyle + '">' + p.name + hostBadge + meBadge + '</span></div>';
+  }).join('');
 }
 
 function showDisconnectToast() {
@@ -1828,6 +1889,8 @@ function goToTitle() {
   document.getElementById('panel-solo').style.display = '';
   document.getElementById('panel-host').style.display = 'none';
   document.getElementById('panel-guest').style.display = 'none';
+  document.getElementById('guest-waiting-panel').style.display = 'none';
+  document.getElementById('guest-roster-list').innerHTML = '';
   document.getElementById('start-btn').disabled = false;
   document.getElementById('start-btn').textContent = 'ゲームスタート';
   showScreen('title-screen');
