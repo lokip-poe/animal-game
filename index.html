@@ -93,33 +93,48 @@
   .animal-emoji:nth-child(3) { animation-delay: 0.6s; }
   .animal-emoji:nth-child(4) { animation-delay: 0.9s; }
 
-  /* 動物画像クラス */
+  /* 動物画像クラス（画像のみ：白フチを統一） */
   .animal-img {
     width: 1em;
     height: 1em;
     vertical-align: -0.15em;
     object-fit: contain;
+    filter: drop-shadow(0 0 2px white) drop-shadow(0 0 2px white) drop-shadow(0 0 2px white);
   }
 
   /* カード・チップ内の動物表示領域 */
   .animal-card .animal-face {
     font-size: 2.4rem;
     line-height: 1;
-    width: 2.4rem;
-    height: 2.4rem;
+    /* 画像表示時は大きく：4.8rem × 4.8rem（面積4倍） */
+    width: 4.8rem;
+    height: 4.8rem;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
+  /* カード内の画像は大きく、emoji は font-size に任せる */
+  .animal-card .animal-face img.animal-img {
+    width: 4.8rem;
+    height: 4.8rem;
+  }
+
   .liar-chip .chip-emoji {
     font-size: 2rem;
     line-height: 1;
-    width: 2rem;
-    height: 2rem;
+    /* チップ画像は2倍サイズ */
+    width: 4rem;
+    height: 4rem;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  /* チップ内の画像も拡大 */
+  .liar-chip .chip-emoji img.animal-img {
+    width: 4rem;
+    height: 4rem;
   }
 
   /* 設定パネル */
@@ -507,9 +522,16 @@
     background: var(--card); border: 2px solid rgba(255,255,255,0.08);
     border-radius: 18px; padding: 16px 12px;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
+    min-width: 0; /* グリッドオーバーフロー防止 */
+    width: 100%;  /* 等幅確保 */
+    box-sizing: border-box;
   }
 
-  .animal-card .animal-label { font-size: 0.7rem; color: var(--muted); font-weight: 700; }
+  .animal-card .animal-label {
+    font-size: 0.7rem; color: var(--muted); font-weight: 700;
+    text-align: center; word-break: keep-all; overflow-wrap: anywhere;
+    line-height: 1.2; max-width: 100%;
+  }
   .animal-card .instruction-text {
     font-size: clamp(0.78rem, 2.2vw, 0.92rem); font-weight: 700;
     text-align: center; line-height: 1.4; color: var(--text);
@@ -534,10 +556,16 @@
     display: flex; flex-direction: column; align-items: center;
     gap: 4px; background: rgba(255,71,87,0.12);
     border: 1.5px solid rgba(255,71,87,0.3);
-    border-radius: 14px; padding: 10px 16px; min-width: 72px;
+    border-radius: 14px; padding: 10px 16px;
+    min-width: 80px; max-width: 100px; /* 等幅固定 */
+    box-sizing: border-box;
   }
 
-  .liar-chip .chip-name { font-size: 0.7rem; color: rgba(255,255,255,0.5); }
+  .liar-chip .chip-name {
+    font-size: 0.7rem; color: rgba(255,255,255,0.5);
+    text-align: center; word-break: keep-all; overflow-wrap: anywhere;
+    line-height: 1.2;
+  }
 
   /* 操作エリア */
   .action-area {
@@ -732,124 +760,8 @@
         </li>
       </ul>
 
-      <!-- 実例ミニチュア -->
-      <div class="howto-examples">
-
-        <!-- 例1: 1匹だけ一致 -->
-        <div class="howto-example">
-          <span class="howto-example-label ex1">例1 ── 1匹だけ一致パターン</span>
-          <div class="howto-example-zone">
-            <div class="howto-zone-label">🔍 ヒントゾーン</div>
-            <div class="howto-zone-row">
-              <div class="howto-chip"><span class="hc-emoji">🦊</span><span class="hc-name">きつね</span></div>
-              <div class="howto-chip"><span class="hc-emoji">🐭</span><span class="hc-name">ねずみ</span></div>
-              <div class="howto-chip"><span class="hc-emoji">🐸</span><span class="hc-name">かえる</span></div>
-            </div>
-          </div>
-          <div class="howto-example-grid">
-            <div class="howto-animal-card">
-              <span class="hac-face">🐶</span>
-              <span class="hac-label">いぬ</span>
-              <span class="hac-inst" style="color:#27ae60;">青いボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card is-truth">
-              <span class="hac-face">🦊</span>
-              <span class="hac-label">きつね ✓本物</span>
-              <span class="hac-inst" style="color:#f1c40f;">赤いボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card">
-              <span class="hac-face">🐻</span>
-              <span class="hac-label">くま</span>
-              <span class="hac-inst" style="color:#e74c3c;">緑のボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card">
-              <span class="hac-face">🐰</span>
-              <span class="hac-label">うさぎ</span>
-              <span class="hac-inst" style="color:#2980b9;">黄色いボタンを<br>タップ</span>
-            </div>
-          </div>
-          <div class="howto-example-desc">
-            ヒントゾーンと4枚の中で一致するのは 🦊 だけ → 🦊 が本物 → 🦊 のカードに書いてある「赤」のボタンを押す
-          </div>
-        </div>
-
-        <!-- 例2: 3匹一致 -->
-        <div class="howto-example">
-          <span class="howto-example-label ex2">例2 ── 3匹一致パターン</span>
-          <div class="howto-example-zone">
-            <div class="howto-zone-label">🔍 ヒントゾーン</div>
-            <div class="howto-zone-row">
-              <div class="howto-chip"><span class="hc-emoji">🐶</span><span class="hc-name">いぬ</span></div>
-              <div class="howto-chip"><span class="hc-emoji">🦊</span><span class="hc-name">きつね</span></div>
-              <div class="howto-chip"><span class="hc-emoji">🐰</span><span class="hc-name">うさぎ</span></div>
-            </div>
-          </div>
-          <div class="howto-example-grid">
-            <div class="howto-animal-card">
-              <span class="hac-face">🐶</span>
-              <span class="hac-label">いぬ</span>
-              <span class="hac-inst" style="color:#e74c3c;">黄色いボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card">
-              <span class="hac-face">🦊</span>
-              <span class="hac-label">きつね</span>
-              <span class="hac-inst" style="color:#27ae60;">青いボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card">
-              <span class="hac-face">🐰</span>
-              <span class="hac-label">うさぎ</span>
-              <span class="hac-inst" style="color:#f1c40f;">赤いボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card is-truth">
-              <span class="hac-face">🐻</span>
-              <span class="hac-label">くま ✓本物</span>
-              <span class="hac-inst" style="color:#2980b9;">緑のボタンを<br>タップ</span>
-            </div>
-          </div>
-          <div class="howto-example-desc">
-            3匹一致しているので、唯一いない 🐻 が本物 → 🐻 のカードに書いてある「緑」のボタンを押す
-          </div>
-        </div>
-
-        <!-- 例3: 答えなし -->
-        <div class="howto-example">
-          <span class="howto-example-label ex3">例3 ── 答えなしパターン</span>
-          <div class="howto-example-zone">
-            <div class="howto-zone-label">🔍 ヒントゾーン</div>
-            <div class="howto-zone-row">
-              <div class="howto-chip"><span class="hc-emoji">🐭</span><span class="hc-name">ねずみ</span></div>
-              <div class="howto-chip"><span class="hc-emoji">🐸</span><span class="hc-name">かえる</span></div>
-              <div class="howto-chip"><span class="hc-emoji">🐯</span><span class="hc-name">とら</span></div>
-            </div>
-          </div>
-          <div class="howto-example-grid">
-            <div class="howto-animal-card">
-              <span class="hac-face">🐶</span>
-              <span class="hac-label">いぬ</span>
-              <span class="hac-inst" style="color:#f1c40f;">青いボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card">
-              <span class="hac-face">🐭</span>
-              <span class="hac-label">ねずみ</span>
-              <span class="hac-inst" style="color:#27ae60;">赤いボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card">
-              <span class="hac-face">🐸</span>
-              <span class="hac-label">かえる</span>
-              <span class="hac-inst" style="color:#e74c3c;">黄色いボタンを<br>タップ</span>
-            </div>
-            <div class="howto-animal-card">
-              <span class="hac-face">🐻</span>
-              <span class="hac-label">くま</span>
-              <span class="hac-inst" style="color:#2980b9;">緑のボタンを<br>タップ</span>
-            </div>
-          </div>
-          <div class="howto-example-desc">
-            一致が🐭・🐸 の2匹 → 答えなし →「答えなし」ボタンを押すのが正解
-          </div>
-        </div>
-
-      </div><!-- /howto-examples -->
+      <!-- 実例ミニチュア（JSで動的描画） -->
+      <div class="howto-examples" id="howto-examples"></div><!-- /howto-examples -->
     </div>
 
     <!-- ボス動物バッジ表示設定 -->
@@ -1023,7 +935,45 @@ const THEMES = {
       { key: 'bear',   emoji: '🐻', name: 'くま' },
       { key: 'rabbit', emoji: '🐰', name: 'うさぎ' },
       { key: 'tiger',  emoji: '🐯', name: 'とら' },
-    ]
+    ],
+    howtoExamples: [
+      {
+        label: '例1 ── 1匹だけ一致パターン',
+        labelClass: 'ex1',
+        zone: ['fox','mouse','frog'],
+        cards: [
+          { key: 'dog',    inst: '青いボタンを\nタップ',   textColor: '#27ae60' },
+          { key: 'fox',    inst: '赤いボタンを\nタップ',   textColor: '#f1c40f', truth: true },
+          { key: 'bear',   inst: '緑のボタンを\nタップ',   textColor: '#e74c3c' },
+          { key: 'rabbit', inst: '黄色いボタンを\nタップ', textColor: '#2980b9' },
+        ],
+        desc: 'ヒントゾーンと4枚の中で一致するのは 🦊 だけ → 🦊 が本物 → 🦊 のカードに書いてある「赤」のボタンを押す',
+      },
+      {
+        label: '例2 ── 3匹一致パターン',
+        labelClass: 'ex2',
+        zone: ['dog','fox','rabbit'],
+        cards: [
+          { key: 'dog',    inst: '黄色いボタンを\nタップ', textColor: '#e74c3c' },
+          { key: 'fox',    inst: '青いボタンを\nタップ',   textColor: '#27ae60' },
+          { key: 'rabbit', inst: '赤いボタンを\nタップ',   textColor: '#f1c40f' },
+          { key: 'bear',   inst: '緑のボタンを\nタップ',   textColor: '#2980b9', truth: true },
+        ],
+        desc: '3匹一致しているので、唯一いない 🐻 が本物 → 🐻 のカードに書いてある「緑」のボタンを押す',
+      },
+      {
+        label: '例3 ── 答えなしパターン',
+        labelClass: 'ex3',
+        zone: ['mouse','frog','tiger'],
+        cards: [
+          { key: 'dog',    inst: '青いボタンを\nタップ',   textColor: '#f1c40f' },
+          { key: 'mouse',  inst: '赤いボタンを\nタップ',   textColor: '#27ae60' },
+          { key: 'frog',   inst: '黄色いボタンを\nタップ', textColor: '#e74c3c' },
+          { key: 'bear',   inst: '緑のボタンを\nタップ',   textColor: '#2980b9' },
+        ],
+        desc: '一致が🐭・🐸 の2匹 → 答えなし →「答えなし」ボタンを押すのが正解',
+      },
+    ],
   },
   dogs: {
     label: 'わんこ大集合',
@@ -1036,7 +986,45 @@ const THEMES = {
       { key: 'pomeranian',   emoji: '🐶',    name: 'ポメラニアン',         image: 'assets/dogs/pomeranian.png' },
       { key: 'dachshund',    emoji: '🐕',    name: 'ダックスフント',       image: 'assets/dogs/dachshund.png' },
       { key: 'dalmatian',    emoji: '🐾',    name: 'ダルメシアン',          image: 'assets/dogs/dalmatian.png' },
-    ]
+    ],
+    howtoExamples: [
+      {
+        label: '例1 ── 1匹だけ一致パターン',
+        labelClass: 'ex1',
+        zone: ['shiba','husky','corgi'],
+        cards: [
+          { key: 'golden',     inst: '青いボタンを\nタップ',   textColor: '#27ae60' },
+          { key: 'shiba',      inst: '赤いボタンを\nタップ',   textColor: '#f1c40f', truth: true },
+          { key: 'samoyed',    inst: '緑のボタンを\nタップ',   textColor: '#e74c3c' },
+          { key: 'pomeranian', inst: '黄色いボタンを\nタップ', textColor: '#2980b9' },
+        ],
+        desc: 'ヒントゾーンと4枚の中で一致するのは柴犬だけ → 柴犬が本物 → 柴犬のカードに書いてある「赤」のボタンを押す',
+      },
+      {
+        label: '例2 ── 3匹一致パターン',
+        labelClass: 'ex2',
+        zone: ['golden','husky','samoyed'],
+        cards: [
+          { key: 'golden',   inst: '黄色いボタンを\nタップ', textColor: '#e74c3c' },
+          { key: 'husky',    inst: '青いボタンを\nタップ',   textColor: '#27ae60' },
+          { key: 'samoyed',  inst: '赤いボタンを\nタップ',   textColor: '#f1c40f' },
+          { key: 'dachshund',inst: '緑のボタンを\nタップ',   textColor: '#2980b9', truth: true },
+        ],
+        desc: '3匹一致しているので、唯一いないダックスフントが本物 → ダックスフントのカードに書いてある「緑」のボタンを押す',
+      },
+      {
+        label: '例3 ── 答えなしパターン',
+        labelClass: 'ex3',
+        zone: ['pomeranian','corgi','dalmatian'],
+        cards: [
+          { key: 'shiba',      inst: '青いボタンを\nタップ',   textColor: '#f1c40f' },
+          { key: 'pomeranian', inst: '赤いボタンを\nタップ',   textColor: '#27ae60' },
+          { key: 'corgi',      inst: '黄色いボタンを\nタップ', textColor: '#e74c3c' },
+          { key: 'golden',     inst: '緑のボタンを\nタップ',   textColor: '#2980b9' },
+        ],
+        desc: '一致がポメラニアン・コーギーの2匹 → 答えなし →「答えなし」ボタンを押すのが正解',
+      },
+    ],
   }
 };
 
@@ -1058,20 +1046,22 @@ function getAnimalKeys() {
 }
 
 // ===== 動物アイコン描画ヘルパー =====
-// size: 'card' | 'chip' | 'badge' | 'inline'
+// size: 'card' | 'chip' | 'badge' | 'inline' | 'howto-chip' | 'howto-card'
 function renderAnimalIcon(animal, size) {
   if (!animal) return '';
   var sizeStyles = {
-    card:   'width:100%;height:100%;object-fit:contain;display:block;',
-    chip:   'width:100%;height:100%;object-fit:contain;display:block;',
-    badge:  'width:1.1rem;height:1.1rem;vertical-align:-0.15em;object-fit:contain;',
-    inline: 'width:1em;height:1em;vertical-align:-0.15em;object-fit:contain;',
+    card:       'width:100%;height:100%;object-fit:contain;display:block;',
+    chip:       'width:100%;height:100%;object-fit:contain;display:block;',
+    badge:      'width:1.1rem;height:1.1rem;vertical-align:-0.15em;object-fit:contain;',
+    inline:     'width:1em;height:1em;vertical-align:-0.15em;object-fit:contain;',
+    'howto-chip':'width:2.2rem;height:2.2rem;object-fit:contain;display:block;',
+    'howto-card':'width:2.8rem;height:2.8rem;object-fit:contain;display:block;',
   };
   var style = sizeStyles[size] || sizeStyles['inline'];
   if (animal.image) {
     // onerror: imgをemoji文字に置換
     var fb = animal.emoji.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-    return '<img src="' + animal.image + '" alt="' + animal.name + '" style="' + style + '" onerror="this.outerHTML=this.dataset.fallback" data-fallback="' + fb + '">';
+    return '<img src="' + animal.image + '" alt="' + animal.name + '" class="animal-img" style="' + style + '" onerror="this.outerHTML=this.dataset.fallback" data-fallback="' + fb + '">';
   }
   return animal.emoji;
 }
@@ -2041,7 +2031,58 @@ function shuffle(arr) {
 
   renderGuaranteedAnimalSelect();
   updateGuaranteedBadge();
+  renderHowtoExamples();
 })();
+
+// ===== 遊び方ミニチュア動的描画 =====
+function renderHowtoExamples() {
+  var theme = getCurrentTheme();
+  var themeData = THEMES[theme];
+  var container = document.getElementById('howto-examples');
+  if (!container || !themeData || !themeData.howtoExamples) return;
+
+  // テーマのanimalsマップを作成
+  var animalMap = {};
+  themeData.animals.forEach(function(a) { animalMap[a.key] = a; });
+
+  container.innerHTML = themeData.howtoExamples.map(function(ex) {
+    // ゾーンチップ
+    var zoneChips = ex.zone.map(function(key) {
+      var a = animalMap[key];
+      if (!a) return '';
+      var face = a.image
+        ? renderAnimalIcon(a, 'howto-chip')
+        : a.emoji;
+      return '<div class="howto-chip"><span class="hc-emoji">' + face + '</span><span class="hc-name">' + a.name + '</span></div>';
+    }).join('');
+
+    // カード
+    var cards = ex.cards.map(function(c) {
+      var a = animalMap[c.key];
+      if (!a) return '';
+      var face = a.image
+        ? renderAnimalIcon(a, 'howto-card')
+        : a.emoji;
+      var isTruth = !!c.truth;
+      var labelText = isTruth ? (a.name + ' ✓本物') : a.name;
+      return '<div class="howto-animal-card' + (isTruth ? ' is-truth' : '') + '">' +
+        '<span class="hac-face">' + face + '</span>' +
+        '<span class="hac-label">' + labelText + '</span>' +
+        '<span class="hac-inst" style="color:' + c.textColor + ';">' + c.inst.replace(/\n/g,'<br>') + '</span>' +
+        '</div>';
+    }).join('');
+
+    return '<div class="howto-example">' +
+      '<span class="howto-example-label ' + ex.labelClass + '">' + ex.label + '</span>' +
+      '<div class="howto-example-zone">' +
+        '<div class="howto-zone-label">🔍 ヒントゾーン</div>' +
+        '<div class="howto-zone-row">' + zoneChips + '</div>' +
+      '</div>' +
+      '<div class="howto-example-grid">' + cards + '</div>' +
+      '<div class="howto-example-desc">' + ex.desc + '</div>' +
+      '</div>';
+  }).join('');
+}
 </script>
 </body>
 </html>
